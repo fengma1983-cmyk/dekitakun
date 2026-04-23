@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="できた！くん">
+<title>できた！くん</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --p:#6C63FF;--pl:#EDE9FF;--pm:#A89BFF;
+  --pk:#FF6B9D;--pkl:#FFE8F2;
+  --g:#22C55E;--gl:#DCFCE7;
+  --y:#F59E0B;--yl:#FEF3C7;
+  --r:#FF6B6B;--o:#FB923C;
+  --b:#4DABF7;--nv:#748FFC;--lm:#94D82D;--gr:#ADB5BD;
+  --dk:#2D3A5E;--d2:#4A5578;--sb:#8891B4;
+  --bg:#F0F4FF;--cd:#fff;--bd:#E0E7FF;--ra:14px;
+}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;
+  background:var(--bg);color:var(--dk);font-size:15px;
+  display:flex;flex-direction:column;
+}
+/* ── HEADER ── */
+.hdr{
+  background:linear-gradient(135deg,#6C63FF,#a855f7,#FF6B9D);
+  padding:12px 16px;padding-top:max(12px,env(safe-area-inset-top));
+  flex-shrink:0;
+}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.hdr-title{font-size:20px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
+.hdr-pts{background:rgba(255,255,255,.22);border-radius:20px;padding:5px 14px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;border:none;-webkit-appearance:none}
+.dnav{display:flex;align-items:center;gap:6px}
+.darr{background:rgba(255,255,255,.2);border:none;border-radius:10px;color:#fff;width:36px;height:36px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-appearance:none}
+.darr:active{background:rgba(255,255,255,.4)}
+.darr:disabled{opacity:.3;cursor:default}
+.dc{flex:1;text-align:center}
+.dlabel{font-size:16px;font-weight:700;color:#fff}
+.dbadge{display:inline-block;border-radius:8px;padding:2px 9px;font-size:11px;font-weight:700;margin-top:3px}
+/* ── TABS ── */
+.tabs{display:flex;background:#fff;border-bottom:2px solid var(--bd);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{flex:1;padding:11px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--sb);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;border:none;background:transparent;min-width:56px;-webkit-appearance:none}
+.tab.on{color:var(--p);border-bottom:3px solid var(--p);background:#f5f3ff}
+.ti{font-size:18px;display:block;margin-bottom:2px}
+/* ── WEEK STRIP ── */
+.wstrip-wrap{background:#fff;border-bottom:1.5px solid var(--bd);flex-shrink:0}
+.wstrip{display:flex;gap:5px;overflow-x:auto;padding:10px 14px 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.wstrip::-webkit-scrollbar{display:none}
+.wd{flex-shrink:0;border-radius:10px;padding:6px 11px;text-align:center;cursor:pointer;border:1.5px solid transparent;background:var(--cd)}
+.wd.act{background:var(--p);border-color:var(--p)}
+.wd.tod{border-color:var(--p)}
+.wdn{font-size:10px;font-weight:700;color:var(--sb);margin-bottom:1px}
+.wd.act .wdn,.wd.act .wdd{color:#fff}
+.wd.tod:not(.act) .wdn,.wd.tod:not(.act) .wdd{color:var(--p)}
+.wdd{font-size:14px;font-weight:700;color:var(--dk)}
+.wdot{width:5px;height:5px;border-radius:50%;background:var(--g);margin:2px auto 0}
+.wd.act .wdot{background:rgba(255,255,255,.7)}
+/* ── VIEW TOGGLE ── */
+.vtog{display:flex;background:var(--bg);border-radius:20px;padding:3px;gap:2px;margin-bottom:13px}
+.vt{flex:1;border:none;background:transparent;border-radius:16px;padding:6px 8px;font-size:12px;font-weight:700;color:var(--sb);cursor:pointer;-webkit-appearance:none}
+.vt.on{background:#fff;color:var(--p);box-shadow:0 1px 4px rgba(108,99,255,.15)}
+/* ── SCROLL AREA ── */
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.main{padding:13px;max-width:760px;margin:0 auto}
+.sec{display:none}.sec.on{display:block}
+/* ── CARDS ── */
+.card{background:var(--cd);border-radius:var(--ra);border:1.5px solid var(--bd);padding:14px;margin-bottom:12px}
+.stitle{font-size:14px;font-weight:700;color:var(--dk);margin-bottom:10px}
+.banner{border-radius:12px;padding:10px 13px;margin-bottom:11px;display:flex;align-items:center;gap:10px}
+/* ── TIMELINE ── */
+.tbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:6px;flex-wrap:wrap}
+.tlbl{font-size:14px;font-weight:700;color:var(--dk)}
+.tright{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.badd{background:var(--p);color:#fff;border:none;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700;cursor:pointer;-webkit-appearance:none}
+.badd:active{opacity:.8}
+.fgrp{display:flex;background:var(--bg);border-radius:20px;padding:2px;gap:1px}
+.fbtn{border:none;background:transparent;border-radius:18px;padding:4px 8px;font-size:10px;font-weight:700;color:var(--sb);cursor:pointer;-webkit-appearance:none}
+.fbtn.on{background:#fff;color:var(--p)}
+.tscroll{overflow-y:auto;max-height:50vh;-webkit-overflow-scrolling:touch}
+.trow{display:flex;min-height:32px;align-items:stretch}
+.ttime{width:48px;flex-shrink:0;font-size:11px;color:var(--sb);text-align:right;padding-right:8px;padding-top:7px;font-weight:600}
+.tcol{flex:1;border-left:2px solid var(--bd);position:relative;min-height:32px}
+.tcol.clickable:active{background:var(--pl)}
+.tblk{position:absolute;left:5px;right:5px;border-radius:9px;padding:4px 8px;cursor:pointer;display:flex;flex-direction:column;justify-content:center;user-select:none;border:1.5px solid rgba(0,0,0,.08)}
+.tblk:active{filter:brightness(.9)}
+.tbt{font-size:12px;font-weight:700;color:#fff;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.tbs{font-size:11px;color:rgba(255,255,255,.85)}
+.tgap{display:flex;align-items:center;gap:5px;padding:4px 0 4px 56px;cursor:pointer}
+.tgl{flex:1;border-top:1.5px dashed var(--bd)}
+.tglb{font-size:11px;color:var(--sb);white-space:nowrap;background:var(--bg);padding:0 5px;border-radius:4px}
+.empty{text-align:center;padding:32px 16px;color:var(--sb)}
+.empic{font-size:44px;margin-bottom:8px}
+.emptit{font-size:14px;font-weight:700;color:var(--d2);margin-bottom:5px}
+.empsub{font-size:12px;line-height:1.6}
+.empbtn{margin-top:13px;border:none;background:var(--p);color:#fff;border-radius:20px;padding:8px 20px;font-size:13px;font-weight:700;cursor:pointer}
+/* ── CALENDAR ── */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-dow{font-size:11px;font-weight:700;color:var(--sb);text-align:center;padding:5px 0}
+.cal-day{border-radius:9px;padding:6px 3px;text-align:center;cursor:pointer;min-height:50px;border:1.5px solid transparent;background:#fff}
+.cal-day:active{background:var(--pl)}
+.cal-day.today{border-color:var(--p)}
+.cal-day.other-month{opacity:.3;cursor:default}
+.cal-day-num{font-size:12px;font-weight:700;color:var(--dk);margin-bottom:3px}
+.cal-day.today .cal-day-num{color:var(--p)}
+.cal-dots{display:flex;gap:2px;justify-content:center;flex-wrap:wrap}
+.cal-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+/* ── RECORD ── */
+.week-bars{display:flex;gap:5px;align-items:flex-end;height:90px;margin-bottom:6px}
+.wbar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.wbar{width:100%;border-radius:5px 5px 0 0;min-height:3px;transition:.4s}
+.wbar-val{font-size:11px;font-weight:700;color:var(--p)}
+.hmap-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:6px}
+.hmap-dow{font-size:9px;font-weight:700;color:var(--sb);text-align:center;padding:2px 0}
+.hmap-cell{border-radius:4px;aspect-ratio:1;cursor:pointer;transition:.15s}
+.hmap-cell:active:not(.future){opacity:.7}
+.hmap-cell.future{cursor:default}
+.stat-row{display:flex;gap:8px;margin-bottom:13px}
+.stat-box{flex:1;background:var(--bg);border-radius:11px;padding:11px;text-align:center}
+.stat-val{font-size:24px;font-weight:700;color:var(--p);line-height:1}
+.stat-lbl{font-size:10px;color:var(--sb);margin-top:3px}
+.cmp-row{display:flex;gap:10px;margin-bottom:9px;align-items:center}
+.cmp-box{flex:1;border-radius:10px;padding:11px;border:1.5px solid var(--bd)}
+.cmp-lbl{font-size:10px;font-weight:700;color:var(--sb);margin-bottom:4px}
+.cmp-val{font-size:20px;font-weight:700;color:var(--dk)}
+.cmp-sub{font-size:10px;color:var(--sb);margin-top:2px}
+/* ── ACHIEVEMENT ── */
+.ag{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+.ac{background:var(--bg);border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center}
+.ai{font-size:26px}
+.an{font-size:11px;font-weight:700;color:var(--dk);margin-bottom:2px}
+.av{font-size:23px;font-weight:700;color:var(--p);line-height:1}
+.as{font-size:10px;color:var(--sb)}
+.bdg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.bg2{border-radius:11px;padding:10px 5px;text-align:center;border:1.5px solid var(--bd);background:#fafafa}
+.bg2.earn{border-color:var(--y);background:var(--yl)}
+.bgi{font-size:22px;margin-bottom:3px}
+.bgn{font-size:10px;font-weight:700;color:var(--d2)}
+.bgreq{font-size:9px;color:var(--sb);margin-top:1px}
+.stages{display:flex;justify-content:space-between;align-items:flex-end;gap:2px;margin-bottom:11px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.stg{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;min-width:46px}
+.stl{font-size:9px;font-weight:700;color:var(--d2);text-align:center}
+.str{font-size:9px;color:var(--sb);text-align:center}
+.stg.cur .stl{color:var(--p)}
+.stg.done .ste{opacity:.5}
+.starr{font-size:10px;color:var(--sb);padding-bottom:15px;flex-shrink:0}
+.prbar-wrap{margin-bottom:11px}
+.prlab{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px}
+.prl-l{font-weight:700;color:var(--p)}
+.prl-r{color:var(--sb)}
+.prbar{height:10px;background:rgba(108,99,255,.12);border-radius:5px;overflow:hidden}
+.prfill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--p),var(--pk));transition:width .5s}
+.glist{display:flex;flex-direction:column;gap:7px}
+.grow{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.72);border-radius:11px;padding:9px 11px}
+.gri{font-size:18px;width:30px;text-align:center;flex-shrink:0}
+.grt{flex:1}
+.grtt{font-size:12px;font-weight:700;color:var(--dk)}
+.grts{font-size:11px;color:var(--sb);margin-top:1px}
+.grp{font-size:12px;font-weight:700;color:var(--p);white-space:nowrap}
+/* ── POINTS ── */
+.ptot{background:linear-gradient(135deg,var(--p),var(--pk));border-radius:14px;padding:12px 18px;color:#fff;text-align:center}
+.ptnum{font-size:34px;font-weight:700;line-height:1}
+.ptlbl{font-size:11px;opacity:.85;margin-top:2px}
+.ptlog{display:flex;flex-direction:column;gap:7px}
+.prow{display:flex;align-items:center;gap:10px;padding:10px 13px;border-radius:11px;background:var(--bg)}
+.pri{font-size:21px;width:32px;text-align:center;flex-shrink:0}
+.prinfo{flex:1}
+.prtit{font-size:13px;font-weight:700;color:var(--dk)}
+.prsub{font-size:11px;color:var(--sb);margin-top:1px}
+.prbdg{border-radius:20px;padding:4px 10px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap}
+.flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+.fbox{border-radius:10px;padding:7px 9px;font-size:12px;font-weight:700;text-align:center;flex:1;min-width:75px}
+.farr{font-size:14px;color:var(--sb);flex-shrink:0}
+/* ── GUIDE ── */
+.gh{background:linear-gradient(160deg,#EDE9FF,#FFE8F2);border-radius:14px;padding:16px;text-align:center;margin-bottom:13px}
+.ghtit{font-size:18px;font-weight:700;color:var(--p);margin-bottom:4px}
+.ghsub{font-size:12px;color:var(--d2);line-height:1.6}
+.earn-g{display:flex;flex-direction:column;gap:8px}
+.er{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:12px;padding:10px 12px}
+.eri{font-size:22px;width:34px;text-align:center;flex-shrink:0}
+.erinfo{flex:1}
+.ertit{font-size:13px;font-weight:700;color:var(--dk)}
+.ersub{font-size:11px;color:var(--sb);margin-top:2px;line-height:1.4}
+.epts{background:var(--p);color:#fff;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap}
+.epts.big{background:linear-gradient(135deg,var(--p),var(--pk))}
+.use-g{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+.uc{border-radius:12px;padding:13px 10px;text-align:center;border:1.5px solid var(--bd)}
+.uci{font-size:26px;margin-bottom:6px}
+.uct{font-size:12px;font-weight:700;color:var(--dk);margin-bottom:3px}
+.ucs{font-size:11px;color:var(--sb);line-height:1.4}
+.tree-mini{display:flex;justify-content:space-around;align-items:flex-end;padding:8px 0 4px;gap:2px;overflow-x:auto}
+.tms{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;min-width:46px}
+.tmsn{font-size:9px;font-weight:700;color:var(--d2);text-align:center}
+.tmsr{font-size:9px;color:var(--sb);text-align:center}
+.tmarr{color:var(--sb);font-size:10px;padding-bottom:14px;flex-shrink:0}
+/* ── INLINE MODALS ── */
+.modal-wrap{display:none;background:rgba(45,58,94,.45);border-radius:var(--ra);padding:16px;margin-bottom:12px}
+.modal-wrap.on{display:block}
+.modal{background:#fff;border-radius:22px;padding:20px;width:100%;max-width:500px;margin:0 auto}
+.mtit{font-size:16px;font-weight:700;margin-bottom:14px;color:var(--dk)}
+.fr{margin-bottom:13px}
+.flbl{font-size:12px;font-weight:700;color:var(--sb);margin-bottom:4px;display:block}
+.finp{width:100%;border:1.5px solid var(--bd);border-radius:10px;padding:9px 11px;font-size:15px;color:var(--dk);outline:none;-webkit-appearance:none}
+.finp:focus{border-color:var(--p)}
+.cg{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.cb{border:2px solid transparent;border-radius:9px;padding:7px 3px;text-align:center;cursor:pointer;font-size:11px;font-weight:700}
+.cb.sel{border-color:var(--dk)!important}
+.cb:active{opacity:.7}
+.dr{display:flex;gap:8px}
+.db{flex:1;border:1.5px solid var(--bd);border-radius:9px;padding:7px;text-align:center;font-size:12px;cursor:pointer;font-weight:600;color:var(--d2);-webkit-appearance:none}
+.db.sel{border-color:var(--p);background:var(--pl);color:var(--p)}
+.mbtns{display:flex;gap:8px;margin-top:16px}
+.bcan{flex:1;border:1.5px solid var(--bd);border-radius:11px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;background:#fff;color:var(--sb);-webkit-appearance:none}
+.bsav{flex:1;border:none;border-radius:11px;padding:10px;font-size:14px;font-weight:700;cursor:pointer;background:var(--p);color:#fff;-webkit-appearance:none}
+.bsav:active{opacity:.8}
+.bdel{border:none;border-radius:11px;padding:10px 14px;font-size:14px;font-weight:700;cursor:pointer;background:#fff1f1;color:var(--r);-webkit-appearance:none}
+.btmr{border:1.5px solid var(--bd);border-radius:11px;padding:10px 14px;font-size:16px;cursor:pointer;background:#fff;color:var(--p);font-weight:700;-webkit-appearance:none}
+.durg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}
+.durb{border:1.5px solid var(--bd);border-radius:9px;padding:7px 3px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;color:var(--d2);background:#fff;-webkit-appearance:none}
+.durb.sel{border-color:var(--p);background:var(--pl);color:var(--p)}
+.dseclbl{font-size:11px;color:var(--sb);font-weight:700;margin-bottom:4px;margin-top:8px}
+/* ── TIMER ── */
+.tmod{display:flex;background:var(--bg);border-radius:11px;padding:3px;margin-bottom:12px}
+.tmb{flex:1;padding:7px;text-align:center;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;color:var(--sb);border:none;background:transparent;-webkit-appearance:none}
+.tmb.on{background:#fff;color:var(--p);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.tdisp{text-align:center;padding:16px 0}
+.tnum{font-size:56px;font-weight:700;color:var(--p);letter-spacing:-2px;font-variant-numeric:tabular-nums}
+.ttask{font-size:13px;color:var(--sb);margin-top:4px}
+.tbtns{display:flex;gap:8px;margin-bottom:8px}
+.tst{flex:1;border:none;border-radius:11px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;background:var(--p);color:#fff;-webkit-appearance:none}
+.tsp{flex:1;border:1.5px solid var(--bd);border-radius:11px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;background:#fff;color:var(--sb);-webkit-appearance:none}
+.tdone{width:100%;border:none;border-radius:11px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;background:var(--g);color:#fff;-webkit-appearance:none}
+/* ── CELEBRATION ── */
+.celeb-wrap{display:none;background:rgba(45,58,94,.45);border-radius:var(--ra);padding:28px 18px;text-align:center;margin-bottom:12px}
+.celeb-wrap.on{display:block}
+.cemi{font-size:60px;margin-bottom:10px}
+.ctit{font-size:22px;font-weight:700;color:var(--p);margin-bottom:7px}
+.ctxt{font-size:14px;color:var(--d2);line-height:1.6;white-space:pre-line;margin-bottom:16px}
+.cok{border:none;border-radius:11px;padding:11px 32px;background:var(--p);color:#fff;font-size:15px;font-weight:700;cursor:pointer;-webkit-appearance:none}
+/* ── REC NAV ── */
+.rec-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.rec-nav-btn{border:none;background:var(--bg);border-radius:9px;padding:5px 13px;font-size:14px;font-weight:700;color:var(--p);cursor:pointer;-webkit-appearance:none}
+.rec-nav-btn:disabled{opacity:.3;cursor:default}
+.rec-nav-title{font-size:14px;font-weight:700;color:var(--dk)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="hdr-title">🌟 できた！くん</div>
+    <button class="hdr-pts" id="hdrPts" onclick="switchTab('pts')">⭐ 4 pt</button>
+  </div>
+  <div class="dnav">
+    <button class="darr" id="prevBtn" onclick="navPrev()">‹</button>
+    <div class="dc"><div class="dlabel" id="navLabel"></div><div id="navBadge"></div></div>
+    <button class="darr" id="nextBtn" onclick="navNext()">›</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab on" onclick="switchTab('plan')"><span class="ti">📅</span>じかんわり</button>
+  <button class="tab" onclick="switchTab('rec')"><span class="ti">📈</span>きろく</button>
+  <button class="tab" onclick="switchTab('ach')"><span class="ti">🏆</span>たっせい</button>
+  <button class="tab" onclick="switchTab('pts')"><span class="ti">⭐</span>ポイント</button>
+  <button class="tab" onclick="switchTab('guide')"><span class="ti">📖</span>ガイド</button>
+</div>
+
+<!-- WEEK STRIP -->
+<div class="wstrip-wrap" id="wstripWrap">
+  <div class="wstrip" id="wstrip"></div>
+</div>
+
+<!-- SCROLL AREA -->
+<div class="scroll-area">
+<div class="main">
+
+<!-- CELEBRATION -->
+<div class="celeb-wrap" id="celebWrap">
+  <div class="cemi" id="cEmi">🎉</div>
+  <div class="ctit" id="cTit"></div>
+  <div class="ctxt" id="cTxt"></div>
+  <button class="cok" onclick="closeCeleb()">つぎへ！</button>
+</div>
+
+<!-- TASK MODAL -->
+<div class="modal-wrap" id="taskModal">
+  <div class="modal">
+    <div class="mtit" id="mTitle">タスクを追加</div>
+    <div class="fr"><label class="flbl">タスク名</label><input class="finp" id="tName" placeholder="例：算数の宿題" autocomplete="off"></div>
+    <div class="fr"><label class="flbl">カテゴリ</label><div class="cg" id="catG"></div></div>
+    <div class="fr"><label class="flbl">開始時刻</label><select class="finp" id="tStart"></select></div>
+    <div class="fr">
+      <label class="flbl">じかん</label>
+      <div class="dseclbl">みじかい（〜1時間）</div><div class="durg" id="durShort"></div>
+      <div class="dseclbl">ながい（1時間以上）</div><div class="durg" id="durLong"></div>
+    </div>
+    <div class="fr"><label class="flbl">むずかしさ</label>
+      <div class="dr">
+        <button class="db sel" data-d="easy" onclick="selDiff2(this)">😊 かんたん</button>
+        <button class="db" data-d="normal" onclick="selDiff2(this)">😐 ふつう</button>
+        <button class="db" data-d="challenge" onclick="selDiff2(this)">😅 むずかしい</button>
+      </div>
+    </div>
+    <div class="mbtns">
+      <button class="bcan" onclick="closeM('taskModal')">キャンセル</button>
+      <button class="bdel" id="btnDel" onclick="delTask()" style="display:none">削除</button>
+      <button class="btmr" id="timerBtn" onclick="openTimerFromModal()" style="display:none">⏱</button>
+      <button class="bsav" onclick="saveTask()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- TIMER MODAL -->
+<div class="modal-wrap" id="timerModal">
+  <div class="modal">
+    <div class="mtit">⏱️ タイマー</div>
+    <div class="tmod">
+      <button class="tmb on" onclick="setTMode('up',this)">正カウント</button>
+      <button class="tmb" onclick="setTMode('down',this)">倒カウント</button>
+    </div>
+    <div class="tdisp"><div class="tnum" id="tNum">00:00</div><div class="ttask" id="tTask"></div></div>
+    <div class="tbtns">
+      <button class="tst" id="tStartBtn" onclick="toggleTimer()">▶ スタート</button>
+      <button class="tsp" onclick="closeM('timerModal');stopTimer()">閉じる</button>
+    </div>
+    <button class="tdone" onclick="completeFromTimer()">✓ かんりょう！</button>
+  </div>
+</div>
+
+<!-- ══ PLAN ══ -->
+<div class="sec on" id="sec-plan">
+  <div class="vtog">
+    <button class="vt on" onclick="setPlanView('day',this)">日</button>
+    <button class="vt" onclick="setPlanView('week',this)">週</button>
+    <button class="vt" onclick="setPlanView('month',this)">月</button>
+  </div>
+  <div id="planContent"></div>
+</div>
+
+<!-- ══ RECORD ══ -->
+<div class="sec" id="sec-rec">
+  <div class="vtog">
+    <button class="vt on" onclick="setRecView('week',this)">週</button>
+    <button class="vt" onclick="setRecView('month',this)">月</button>
+  </div>
+  <div id="recContent"></div>
+</div>
+
+<!-- ══ ACHIEVEMENT ══ -->
+<div class="sec" id="sec-ach">
+  <div class="card">
+    <div class="stitle">📈 今日のきろく</div>
+    <div class="ag">
+      <div class="ac"><div class="ai">✅</div><div><div class="an">かんりょう</div><div class="av" id="achDone">2</div><div class="as">こ</div></div></div>
+      <div class="ac"><div class="ai">⭐</div><div><div class="an">ポイント</div><div class="av" id="achPts">4</div><div class="as">pt</div></div></div>
+      <div class="ac"><div class="ai">🔥</div><div><div class="an">ちょうせんクリア</div><div class="av" id="achChal">0</div><div class="as">こ</div></div></div>
+      <div class="ac"><div class="ai">⚡</div><div><div class="an">さいちょうしゅうちゅう</div><div class="av" id="achFoc">0</div><div class="as">ふん</div></div></div>
+    </div>
+  </div>
+  <div class="card"><div class="stitle">🎖️ バッジ</div><div class="bdg" id="badgeGrid"></div></div>
+  <div class="card" style="background:linear-gradient(160deg,#e8f5e9,#f3e8ff);border:none">
+    <div class="stitle" style="color:var(--p)">🌳 成長ツリー</div>
+    <div style="font-size:12px;font-weight:700;color:var(--d2);margin-bottom:8px">かんりょう数をためてツリーを育てよう！</div>
+    <div class="stages" id="stageRow"></div>
+    <div class="prbar-wrap">
+      <div class="prlab"><span class="prl-l" id="prLeft">次まであと2こ！</span><span class="prl-r" id="prRight">2/4こ</span></div>
+      <div class="prbar"><div class="prfill" id="prFill" style="width:50%"></div></div>
+    </div>
+    <div class="glist">
+      <div style="font-size:12px;font-weight:700;color:var(--d2);margin-bottom:3px">🌱 ツリーをそだてるには？</div>
+      <div class="grow"><div class="gri">✅</div><div class="grt"><div class="grtt">タスクをかんりょうする</div><div class="grts">かんりょうするたびに育つ</div></div><div class="grp">+1 こ</div></div>
+      <div class="grow"><div class="gri">😅</div><div class="grt"><div class="grtt">「ちょっとむずかしい」をクリア</div><div class="grts">チャレンジするともっと早く育つ</div></div><div class="grp">+2 こ</div></div>
+      <div class="grow"><div class="gri">📅</div><div class="grt"><div class="grtt">明日のじかんわりを作る</div><div class="grts">先に計画を立てると水をあげられる</div></div><div class="grp">+1 こ</div></div>
+      <div class="grow"><div class="gri">📝</div><div class="grt"><div class="grtt">ふりかえりを書く</div><div class="grts">今日を振り返ると肥料になる</div></div><div class="grp">+1 こ</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ POINTS ══ -->
+<div class="sec" id="sec-pts">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <div><div style="font-size:14px;font-weight:700;color:var(--dk)">今日のポイント</div><div style="font-size:12px;color:var(--sb);margin-top:1px" id="ptDateLabel"></div></div>
+    <div class="ptot"><div class="ptnum" id="ptTotal">4</div><div class="ptlbl">pt ゲット！</div></div>
+  </div>
+  <div class="card" style="padding:12px"><div class="stitle">📋 どこでもらえたか</div><div class="ptlog" id="ptLog"></div></div>
+  <div class="card" style="background:var(--pl);border-color:var(--pl)">
+    <div style="font-size:13px;font-weight:700;color:var(--p);margin-bottom:7px">⭐ ポイントをためると…</div>
+    <div class="flow">
+      <div class="fbox" style="background:var(--p);color:#fff">ポイントをためる</div>
+      <div class="farr">→</div>
+      <div class="fbox" style="background:#fff;color:var(--p);border:1.5px solid var(--bd)">ツリーが育つ</div>
+      <div class="farr">→</div>
+      <div class="fbox" style="background:#fff;color:var(--d2);border:1.5px solid var(--bd)">バッジ解放</div>
+    </div>
+    <div style="font-size:11px;color:var(--d2);margin-top:8px;text-align:center">ポイントはツリーの「えいよう」になるよ！</div>
+  </div>
+</div>
+
+<!-- ══ GUIDE ══ -->
+<div class="sec" id="sec-guide">
+  <div class="gh"><div class="ghtit">🌟 できた！くんのしくみ</div><div class="ghsub">がんばったことがポイントになって<br>ツリーが育つよ！</div></div>
+  <div class="card">
+    <div class="stitle">⭐ ポイントのもらいかた</div>
+    <div class="earn-g">
+      <div class="er"><div class="eri">😊</div><div class="erinfo"><div class="ertit">タスクをかんりょう（かんたん）</div><div class="ersub">計画したことを終わらせよう</div></div><div class="epts">+1 pt</div></div>
+      <div class="er"><div class="eri">😐</div><div class="erinfo"><div class="ertit">タスクをかんりょう（ふつう）</div><div class="ersub">しっかり集中して取り組もう</div></div><div class="epts">+2 pt</div></div>
+      <div class="er" style="background:var(--yl);border:1.5px solid #fcd34d"><div class="eri">😅</div><div class="erinfo"><div class="ertit">チャレンジタスクをクリア！</div><div class="ersub">むずかしいことに挑戦するとボーナス！</div></div><div class="epts big">+4 pt</div></div>
+      <div class="er"><div class="eri">📅</div><div class="erinfo"><div class="ertit">明日のじかんわりを作る</div><div class="ersub">寝る前に明日の計画を立てよう</div></div><div class="epts">+2 pt</div></div>
+      <div class="er"><div class="eri">📝</div><div class="erinfo"><div class="ertit">ふりかえりを書く</div><div class="ersub">今日を振り返ってコメントしよう</div></div><div class="epts">+1 pt</div></div>
+      <div class="er"><div class="eri">🔥</div><div class="erinfo"><div class="ertit">連続して使う（ボーナス）</div><div class="ersub">3日・7日・14日連続でボーナスポイント</div></div><div class="epts">+3〜10 pt</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="stitle">🎁 ポイントでできること</div>
+    <div class="use-g">
+      <div class="uc" style="background:var(--pl);border-color:#c4bfff"><div class="uci">🌳</div><div class="uct">ツリーを育てる</div><div class="ucs">ポイントがたまるほどツリーが大きく育つ！</div></div>
+      <div class="uc" style="background:var(--yl);border-color:#fcd34d"><div class="uci">🎖️</div><div class="uct">バッジをゲット</div><div class="ucs">条件クリアで特別なバッジが解放</div></div>
+      <div class="uc" style="background:var(--gl);border-color:#86efac"><div class="uci">📊</div><div class="uct">じぶん記録</div><div class="ucs">ポイント推移で成長を確認</div></div>
+      <div class="uc" style="background:var(--pkl);border-color:#fca5c0"><div class="uci">🗂️</div><div class="uct">週報カードをシェア</div><div class="ucs">がんばりを家族に見せよう</div></div>
+    </div>
+  </div>
+  <div class="card" style="background:linear-gradient(160deg,#e8f5e9,#f3e8ff);border:none">
+    <div class="stitle" style="color:var(--p)">🌱 ツリーの成長ステージ</div>
+    <div class="tree-mini">
+      <div class="tms"><div style="font-size:18px">🌰</div><div class="tmsn">たね</div><div class="tmsr">0〜</div></div><div class="tmarr">▶</div>
+      <div class="tms"><div style="font-size:22px">🌱</div><div class="tmsn">め</div><div class="tmsr">4〜</div></div><div class="tmarr">▶</div>
+      <div class="tms"><div style="font-size:26px">🌿</div><div class="tmsn">くき</div><div class="tmsr">10〜</div></div><div class="tmarr">▶</div>
+      <div class="tms"><div style="font-size:29px">🪴</div><div class="tmsn">なえ</div><div class="tmsr">20〜</div></div><div class="tmarr">▶</div>
+      <div class="tms"><div style="font-size:32px">🌲</div><div class="tmsn">こき</div><div class="tmsr">35〜</div></div><div class="tmarr">▶</div>
+      <div class="tms"><div style="font-size:35px">🌳✨</div><div class="tmsn">まんかい</div><div class="tmsr">60〜</div></div>
+    </div>
+    <div style="text-align:center;font-size:11px;color:var(--sb);margin-top:7px">毎日続けると、だんだん大きくなるよ！</div>
+  </div>
+  <div class="card"><div class="stitle">🎖️ バッジのとりかた</div><div style="display:flex;flex-direction:column;gap:7px" id="badgeGuide"></div></div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /scroll-area -->
+
+<script>
+const CATS=[
+  {id:'school',label:'学校', icon:'🏫',color:'#4DABF7'},
+  {id:'juku',  label:'塾',   icon:'📚',color:'#F783AC'},
+  {id:'tutor', label:'補習', icon:'👤',color:'#CC5DE8'},
+  {id:'hw',    label:'宿題', icon:'✏️',color:'#51CF66'},
+  {id:'study', label:'自習', icon:'🔍',color:'#FB923C'},
+  {id:'play',  label:'遊び', icon:'🎮',color:'#FF6B6B'},
+  {id:'meal',  label:'食事', icon:'🍚',color:'#94D82D'},
+  {id:'sleep', label:'睡眠', icon:'😴',color:'#748FFC'},
+  {id:'free',  label:'自由', icon:'⬜',color:'#ADB5BD'},
+];
+const DS=[{s:1,l:'15分'},{s:2,l:'30分'},{s:3,l:'45分'},{s:4,l:'1時間'}];
+const DL=[{s:6,l:'1.5時間'},{s:8,l:'2時間'},{s:12,l:'3時間'},{s:16,l:'4時間'},{s:20,l:'5時間'},{s:24,l:'6時間'},{s:28,l:'7時間'},{s:32,l:'8時間'}];
+const CELEB={
+  easy:     {e:'⭐',t:'かんりょう！',     p:1,m:'やった！いいね！'},
+  normal:   {e:'🎉',t:'すごい！',         p:2,m:'よくできたね！さすが！'},
+  challenge:{e:'🔥',t:'チャレンジクリア！',p:4,m:'むずかしいのにやり切った！\nそれが一番大事！'}
+};
+const STAGES=[
+  {min:0, e:'🌰',l:'たね'},
+  {min:4, e:'🌱',l:'め'},
+  {min:10,e:'🌿',l:'くき'},
+  {min:20,e:'🪴',l:'なえ'},
+  {min:35,e:'🌲',l:'こき'},
+  {min:60,e:'🌳✨',l:'まんかい'}
+];
+const BDEFS=[
+  {icon:'🌟',name:'はじめて',    req:'タスクを1こかんりょうする',      cond:s=>s.done>=1},
+  {icon:'🎯',name:'5こかんりょう',req:'タスクを5こかんりょうする',    cond:s=>s.done>=5},
+  {icon:'🔥',name:'チャレンジャー',req:'むずかしいタスクを1こクリア', cond:s=>s.chal>=1},
+  {icon:'💎',name:'10ポイント',  req:'ポイントを10ptためる',           cond:s=>s.points>=10},
+  {icon:'🔆',name:'3日連続',     req:'3日連続でアプリを使う',          cond:()=>false},
+  {icon:'🏅',name:'パーフェクト',req:'1日のタスクを全部かんりょう',   cond:()=>false}
+];
+const DOW=['日','月','火','水','木','金','土'];
+const TODAY=new Date();TODAY.setHours(0,0,0,0);
+
+let off=0,nid=30;
+let st={points:4,done:2,chal:0,focus:0};
+let ptLog=[
+  {icon:'✅',title:'「朝ご飯」をかんりょう',sub:'かんたんタスク',pts:1,color:'#22C55E',time:'07:30'},
+  {icon:'✅',title:'「学校」をかんりょう',  sub:'ふつうタスク',  pts:2,color:'#4DABF7',time:'15:30'},
+  {icon:'📅',title:'明日のじかんわりを追加', sub:'じぜんけいかく',pts:2,color:'#6C63FF',time:'22:00'},
+];
+let db={};
+let selCat='hw',sDiff='normal',sDur=2,editId=null;
+let tivl=null,tsec=0,tmode='up',trun=false,ttid=null;
+let planView='day',recView='week';
+let calOff=0,recWOff=0,recMOff=0;
+let fMode='all';
+
+function dk(o){const d=new Date(TODAY);d.setDate(d.getDate()+o);return d.toISOString().slice(0,10)}
+function dKey(date){return date.toISOString().slice(0,10)}
+function ct(){return db[dk(off)]||(db[dk(off)]=[]),db[dk(off)]}
+function isPast(){return off<0}
+function getCat(id){return CATS.find(c=>c.id===id)||CATS[0]}
+function s2t(s){const t=6*60+s*15;return`${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`}
+function dL(s){if(s<4)return s*15+'分';if(s%4===0)return(s/4)+'時間';return Math.floor(s/4)+'時間'+(s%4*15)+'分'}
+function dayDiff(date){const d=new Date(date);d.setHours(0,0,0,0);return Math.round((d-TODAY)/86400000)}
+
+// Seed data
+db[dk(0)]=[
+  {id:1,name:'朝ご飯',    cat:'meal',  start:24,dur:2, diff:'easy',   status:'done'},
+  {id:2,name:'学校',      cat:'school',start:28,dur:24,diff:'normal', status:'done'},
+  {id:3,name:'算数の宿題',cat:'hw',    start:56,dur:4, diff:'normal', status:'planned'},
+  {id:4,name:'英語塾',    cat:'juku',  start:60,dur:6, diff:'challenge',status:'planned'},
+  {id:5,name:'遊び',      cat:'play',  start:68,dur:4, diff:'easy',   status:'planned'},
+  {id:6,name:'夕ご飯',    cat:'meal',  start:72,dur:2, diff:'easy',   status:'planned'},
+  {id:7,name:'睡眠',      cat:'sleep', start:82,dur:32,diff:'easy',   status:'planned'},
+];
+db[dk(1)]=[
+  {id:8,name:'学校',cat:'school',start:28,dur:24,diff:'normal',status:'planned'},
+  {id:9,name:'睡眠',cat:'sleep', start:82,dur:32,diff:'easy',  status:'planned'},
+];
+for(let i=1;i<=25;i++){
+  const key=dk(-i);const cats=['hw','study','juku','play','tutor'];
+  const tasks=[{id:nid++,name:'学校',cat:'school',start:28,dur:24,diff:'normal',status:'done'}];
+  const cnt=Math.floor(Math.random()*4)+1;
+  for(let j=0;j<cnt;j++){
+    const done=Math.random()>.25;
+    tasks.push({id:nid++,name:['宿題','自習','英語塾','遊び','補習'][j%5],cat:cats[j%5],start:56+j*4,dur:[2,3,4,6][j%4],diff:['easy','normal','challenge'][j%3],status:done?'done':'planned'});
+  }
+  db[key]=tasks;
+}
+
+// NAV
+function navPrev(){
+  if(planView==='day')off=Math.max(-90,off-1);
+  else calOff--;
+  refreshNav();
+}
+function navNext(){
+  if(planView==='day')off=Math.min(90,off+1);
+  else calOff++;
+  refreshNav();
+}
+function refreshNav(){
+  const d=new Date(TODAY);d.setDate(d.getDate()+off);
+  const m=d.getMonth()+1,day=d.getDate(),w=DOW[d.getDay()];
+  if(planView==='day'){
+    document.getElementById('navLabel').textContent=`${m}月${day}日（${w}）`;
+    const bd=document.getElementById('navBadge');
+    if(off===0)bd.innerHTML='<span class="dbadge" style="background:rgba(255,255,255,.25);color:#fff">今日</span>';
+    else if(off===1)bd.innerHTML='<span class="dbadge" style="background:#F59E0B;color:#7c4d00">明日</span>';
+    else if(off>0)bd.innerHTML=`<span class="dbadge" style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.85)">${off}日後</span>`;
+    else bd.innerHTML=`<span class="dbadge" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.65)">${-off}日前</span>`;
+  } else {
+    const base=new Date(TODAY.getFullYear(),TODAY.getMonth()+calOff,1);
+    document.getElementById('navLabel').textContent=`${base.getFullYear()}年${base.getMonth()+1}月`;
+    document.getElementById('navBadge').innerHTML='';
+  }
+  document.getElementById('prevBtn').disabled=planView==='day'?off<=-90:calOff<=-24;
+  document.getElementById('nextBtn').disabled=planView==='day'?off>=90:calOff>=3;
+  document.getElementById('wstripWrap').style.display=planView==='day'?'block':'none';
+  if(planView==='day')renderWstrip();
+  renderPlanContent();
+  const ptd=document.getElementById('ptDateLabel');
+  if(ptd)ptd.textContent=`${m}月${day}日（${w}）`;
+}
+
+function renderWstrip(){
+  const el=document.getElementById('wstrip');el.innerHTML='';
+  for(let i=-3;i<=7;i++){
+    const d2=new Date(TODAY);d2.setDate(d2.getDate()+i);
+    const key=dKey(d2);const hp=(db[key]||[]).length>0;
+    const btn=document.createElement('button');
+    btn.style.cssText='background:transparent;border:none;padding:0;cursor:pointer;-webkit-appearance:none';
+    const inner=document.createElement('div');
+    inner.className='wd'+(i===off?' act':i===0?' tod':'');
+    inner.innerHTML=`<div class="wdn">${DOW[d2.getDay()]}</div><div class="wdd">${d2.getDate()}</div>${hp?'<div class="wdot"></div>':'<div style="height:7px"></div>'}`;
+    btn.appendChild(inner);
+    btn.onclick=(()=>{const x=i;return()=>{off=x;refreshNav()}})(i);
+    el.appendChild(btn);
+  }
+}
+
+// PLAN
+function setPlanView(v,el){
+  planView=v;
+  document.querySelectorAll('#sec-plan .vt').forEach(b=>b.classList.toggle('on',b===el));
+  refreshNav();
+}
+function renderPlanContent(){
+  const el=document.getElementById('planContent');el.innerHTML='';
+  if(planView==='day')renderDayView(el);
+  else renderCalView(el);
+}
+function renderDayView(container){
+  const tasks=ct();
+  if(off===1)container.appendChild(mkBanner('⭐','明日のじかんわりを作ろう！','今日中に計画を立てるとボーナスポイントがもらえるよ','+2 pt','#FEF3C7','#fcd34d','#92400e','#b45309'));
+  else if(off>1)container.appendChild(mkBanner('📅',`${off}日後のじかんわりを作ろう`,'先に計画しておくと当日がスムーズだよ','+2 pt','#FEF3C7','#fcd34d','#92400e','#b45309'));
+  if(off>0&&tasks.length===0&&(db[dk(0)]||[]).length>0){
+    const cb=document.createElement('div');cb.className='banner';cb.style.cssText='background:var(--pl);border:1.5px solid #c4bfff';
+    cb.innerHTML=`<div style="font-size:22px">📋</div><div style="flex:1;font-size:12px;font-weight:700;color:var(--p)">今日のじかんわりをコピーする？</div><button style="border:none;border-radius:9px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer;background:var(--p);color:#fff;-webkit-appearance:none" onclick="copyDay()">コピー</button>`;
+    container.appendChild(cb);
+  }
+  const card=document.createElement('div');card.className='card';card.style.padding='11px 14px';
+  const bar=document.createElement('div');bar.className='tbar';
+  const lbl=document.createElement('div');lbl.className='tlbl';
+  lbl.textContent=isPast()?'📖 この日のきろく':off>0?'✏️ じかんわりを作る':'📅 今日のじかんわり';
+  bar.appendChild(lbl);
+  if(!isPast()){
+    const right=document.createElement('div');right.className='tright';
+    const fg=document.createElement('div');fg.className='fgrp';
+    [['全表示','all'],['先頭カット','head'],['空白非表示','gaps']].forEach(([l,m])=>{
+      const b=document.createElement('button');b.className='fbtn'+(fMode===m?' on':'');b.textContent=l;
+      b.onclick=()=>{fMode=m;document.querySelectorAll('.fbtn').forEach(x=>x.classList.toggle('on',x===b));const sc=card.querySelector('.tscroll');if(sc)renderTL(sc,ct())};
+      fg.appendChild(b);
+    });
+    const badd=document.createElement('button');badd.className='badd';badd.textContent='+ 追加';badd.onclick=openAdd;
+    right.appendChild(fg);right.appendChild(badd);bar.appendChild(right);
+  }
+  card.appendChild(bar);
+  if(tasks.length===0){
+    const em=document.createElement('div');em.className='empty';
+    if(off>0)em.innerHTML=`<div class="empic">✏️</div><div class="emptit">まだじかんわりがないよ</div><div class="empsub">「+ 追加」ボタンでタスクを追加しよう！</div><button class="empbtn" onclick="openAdd()">+ タスクを追加する</button>`;
+    else em.innerHTML=`<div class="empic">📖</div><div class="emptit">この日はきろくなし</div><div class="empsub">じかんわりが作られていなかった日だよ</div>`;
+    card.appendChild(em);
+  } else {
+    const sc=document.createElement('div');sc.className='tscroll';renderTL(sc,ct());card.appendChild(sc);
+  }
+  container.appendChild(card);
+}
+function renderCalView(container){
+  const isWeek=planView==='week';
+  const card=document.createElement('div');card.className='card';
+  if(isWeek){
+    const monday=new Date(TODAY);monday.setDate(monday.getDate()-((monday.getDay()+6)%7)+calOff*7);
+    const sunday=new Date(monday);sunday.setDate(monday.getDate()+6);
+    const nav=document.createElement('div');nav.className='rec-nav';
+    nav.innerHTML=`<div class="rec-nav-title">${monday.getMonth()+1}月${monday.getDate()}日 〜 ${sunday.getMonth()+1}月${sunday.getDate()}日</div>`;
+    card.appendChild(nav);
+    const grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:repeat(7,1fr);gap:5px';
+    for(let i=0;i<7;i++){
+      const d=new Date(monday);d.setDate(d.getDate()+i);
+      const key=dKey(d);const tasks2=db[key]||[];
+      const isT=dKey(d)===dKey(TODAY);const diff=dayDiff(d);
+      const done=tasks2.filter(t=>t.status==='done').length;
+      const col=document.createElement('div');
+      col.style.cssText=`border-radius:11px;border:1.5px solid ${isT?'var(--p)':'var(--bd)'};padding:8px 4px;text-align:center;cursor:pointer;background:${isT?'var(--pl)':'#fff'}`;
+      col.innerHTML=`<div style="font-size:11px;font-weight:700;color:${isT?'var(--p)':'var(--sb)'}">${DOW[d.getDay()]}</div><div style="font-size:14px;font-weight:700;color:${isT?'var(--p)':'var(--dk)'};margin:3px 0">${d.getDate()}</div><div style="font-size:11px;color:var(--sb)">${tasks2.length?`${done}/${tasks2.length}こ`:'ー'}</div><div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center;margin-top:5px">${tasks2.slice(0,4).map(t=>`<div style="width:7px;height:7px;border-radius:50%;background:${getCat(t.cat).color};opacity:${t.status==='done'?1:.4}"></div>`).join('')}</div>`;
+      col.onclick=(()=>{const x=diff;return()=>{off=x;planView='day';document.querySelectorAll('#sec-plan .vt').forEach((b,i2)=>b.classList.toggle('on',i2===0));refreshNav()}})(diff);
+      grid.appendChild(col);
+    }
+    card.appendChild(grid);
+  } else {
+    const base=new Date(TODAY.getFullYear(),TODAY.getMonth()+calOff,1);
+    const nav=document.createElement('div');nav.className='rec-nav';
+    nav.innerHTML=`<div class="rec-nav-title">${base.getFullYear()}年${base.getMonth()+1}月</div>`;
+    card.appendChild(nav);
+    const g=document.createElement('div');g.className='cal-grid';
+    DOW.forEach(d=>{const el=document.createElement('div');el.className='cal-dow';el.textContent=d;g.appendChild(el)});
+    const firstDow=base.getDay();
+    for(let i=0;i<firstDow;i++){const el=document.createElement('div');el.className='cal-day other-month';g.appendChild(el)}
+    const dim=new Date(base.getFullYear(),base.getMonth()+1,0).getDate();
+    for(let d2=1;d2<=dim;d2++){
+      const date=new Date(base.getFullYear(),base.getMonth(),d2);
+      const key=dKey(date);const tasks2=db[key]||[];const diff=dayDiff(date);
+      const isT=diff===0;
+      const el=document.createElement('div');el.className='cal-day'+(isT?' today':'');
+      el.innerHTML=`<div class="cal-day-num">${d2}</div><div class="cal-dots">${tasks2.slice(0,5).map(t=>`<div class="cal-dot" style="background:${getCat(t.cat).color};opacity:${t.status==='done'?1:.4}"></div>`).join('')}</div>`;
+      el.onclick=(()=>{const x=diff;return()=>{off=x;planView='day';document.querySelectorAll('#sec-plan .vt').forEach((b,i2)=>b.classList.toggle('on',i2===0));refreshNav()}})(diff);
+      g.appendChild(el);
+    }
+    card.appendChild(g);
+    const leg=document.createElement('div');leg.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;justify-content:center';
+    CATS.slice(0,7).forEach(c=>{const el=document.createElement('div');el.style.cssText='display:flex;align-items:center;gap:3px;font-size:10px;color:var(--d2)';el.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:${c.color}"></div>${c.label}`;leg.appendChild(el)});
+    card.appendChild(leg);
+  }
+  const hint=document.createElement('div');hint.style.cssText='font-size:11px;color:var(--sb);text-align:center;margin-top:9px';hint.textContent='日付をタップするとその日の詳細を見られるよ';
+  card.appendChild(hint);
+  container.appendChild(card);
+}
+
+// RECORD
+function setRecView(v,el){
+  recView=v;
+  document.querySelectorAll('#sec-rec .vt').forEach(b=>b.classList.toggle('on',b===el));
+  renderRecContent();
+}
+function renderRecContent(){
+  const el=document.getElementById('recContent');el.innerHTML='';
+  if(recView==='week')renderWeekRec(el);
+  else renderMonthRec(el);
+}
+function getWeekData(wOff){
+  const mon=new Date(TODAY);mon.setDate(mon.getDate()-((mon.getDay()+6)%7)+wOff*7);
+  return Array.from({length:7},(_,i)=>{
+    const d=new Date(mon);d.setDate(d.getDate()+i);
+    const tasks=(db[dKey(d)]||[]);
+    return{date:d,key:dKey(d),done:tasks.filter(t=>t.status==='done').length,total:tasks.length};
+  });
+}
+function renderWeekRec(container){
+  const nav=document.createElement('div');nav.className='rec-nav';
+  const wd=getWeekData(recWOff);const ws=wd[0].date,we=wd[6].date;
+  nav.innerHTML=`<button class="rec-nav-btn" onclick="recWOff--;renderRecContent()">‹</button><span class="rec-nav-title">${ws.getMonth()+1}月${ws.getDate()}日 〜 ${we.getMonth()+1}月${we.getDate()}日</span><button class="rec-nav-btn" onclick="recWOff=Math.min(0,recWOff+1);renderRecContent()" ${recWOff>=0?'disabled':''}>›</button>`;
+  container.appendChild(nav);
+  const prev=getWeekData(recWOff-1);
+  const thisT=wd.reduce((a,b)=>a+b.done,0),prevT=prev.reduce((a,b)=>a+b.done,0);
+  const diff2=thisT-prevT;
+  const cmp=document.createElement('div');cmp.className='card';cmp.style.padding='13px';
+  cmp.innerHTML=`<div class="stitle">📊 先週との比較</div><div class="cmp-row"><div class="cmp-box"><div class="cmp-lbl">先週</div><div class="cmp-val">${prevT}こ</div><div class="cmp-sub">かんりょう</div></div><div style="font-size:30px;color:${diff2>0?'var(--g)':diff2<0?'var(--r)':'var(--sb)'}">${diff2>0?'↑':diff2<0?'↓':'→'}</div><div class="cmp-box" style="border-color:${diff2>0?'var(--g)':diff2<0?'var(--r)':'var(--bd)'}"><div class="cmp-lbl">今週</div><div class="cmp-val" style="color:${diff2>0?'var(--g)':diff2<0?'var(--r)':'var(--dk)'}">${thisT}こ</div><div class="cmp-sub" style="color:${diff2>0?'var(--g)':diff2<0?'var(--r)':'var(--sb)'}">${diff2>0?`+${diff2}こ 進歩！`:diff2<0?`${diff2}こ`:'変わらず'}</div></div></div>`;
+  container.appendChild(cmp);
+  const bc=document.createElement('div');bc.className='card';bc.style.padding='13px';
+  bc.innerHTML=`<div class="stitle">📅 毎日のかんりょう数</div><div class="week-bars" id="wBars"></div><div style="display:flex;gap:4px;justify-content:space-around">${wd.map(d=>`<div style="flex:1;text-align:center;font-size:10px;color:${dKey(d.date)===dKey(TODAY)?'var(--p)':'var(--sb)'};font-weight:700">${DOW[d.date.getDay()]}</div>`).join('')}</div>`;
+  container.appendChild(bc);
+  const maxD=Math.max(...wd.map(d=>d.done),1);
+  const barsEl=document.getElementById('wBars');
+  wd.forEach(d=>{
+    const isT=dKey(d.date)===dKey(TODAY);
+    const col=document.createElement('div');col.className='wbar-col';
+    col.innerHTML=`<div class="wbar-val">${d.done}</div><div class="wbar" style="height:${Math.max(Math.round(d.done/maxD*65),d.done?4:2)}px;background:${isT?'var(--p)':'var(--pm)'}"></div>`;
+    col.onclick=(()=>{const x=dayDiff(d.date);return()=>{off=x;switchTab('plan');planView='day';document.querySelectorAll('#sec-plan .vt').forEach((b,i)=>b.classList.toggle('on',i===0));refreshNav()}})(d);
+    barsEl.appendChild(col);
+  });
+  const sc=document.createElement('div');sc.className='card';sc.style.padding='13px';
+  const streak=calcStreak();
+  sc.innerHTML=`<div class="stitle">🏅 この週のまとめ</div><div class="stat-row"><div class="stat-box"><div class="stat-val">${thisT}</div><div class="stat-lbl">かんりょう合計</div></div><div class="stat-box"><div class="stat-val">${wd.filter(d=>d.done>0).length}</div><div class="stat-lbl">活動した日</div></div><div class="stat-box"><div class="stat-val">${streak}</div><div class="stat-lbl">連続記録（日）</div></div></div>`;
+  container.appendChild(sc);
+}
+function renderMonthRec(container){
+  const base=new Date(TODAY.getFullYear(),TODAY.getMonth()+recMOff,1);
+  const nav=document.createElement('div');nav.className='rec-nav';
+  nav.innerHTML=`<button class="rec-nav-btn" onclick="recMOff--;renderRecContent()">‹</button><span class="rec-nav-title">${base.getFullYear()}年${base.getMonth()+1}月</span><button class="rec-nav-btn" onclick="recMOff=Math.min(0,recMOff+1);renderRecContent()" ${recMOff>=0?'disabled':''}>›</button>`;
+  container.appendChild(nav);
+  const hc=document.createElement('div');hc.className='card';hc.style.padding='13px';
+  hc.innerHTML=`<div class="stitle">📅 ヒートマップ</div><div class="hmap-grid" id="hmGrid"></div><div style="display:flex;align-items:center;gap:7px;margin-top:9px;font-size:11px;color:var(--sb)"><span>少ない</span><div style="display:flex;gap:3px">${[0,1,2,3,4].map(i=>`<div style="width:13px;height:13px;border-radius:3px;background:${'#E0E7FF,#C5BAFF,#A89BFF,#6C63FF,#4A3FCC'.split(',')[i]}"></div>`).join('')}</div><span>多い</span></div><div style="font-size:11px;color:var(--sb);margin-top:5px">タップするとその日のじかんわりを見られるよ</div>`;
+  container.appendChild(hc);
+  const dim=new Date(base.getFullYear(),base.getMonth()+1,0).getDate();
+  const firstDow=base.getDay();
+  const g=document.getElementById('hmGrid');
+  DOW.forEach(d=>{const el=document.createElement('div');el.className='hmap-dow';el.textContent=d;g.appendChild(el)});
+  for(let i=0;i<firstDow;i++){const el=document.createElement('div');g.appendChild(el)}
+  const colors=['#E0E7FF','#C5BAFF','#A89BFF','#6C63FF','#4A3FCC'];
+  let mTotal=0,mActive=0;
+  for(let d2=1;d2<=dim;d2++){
+    const date=new Date(base.getFullYear(),base.getMonth(),d2);
+    const done=(db[dKey(date)]||[]).filter(t=>t.status==='done').length;
+    const diff=dayDiff(date);const isFut=diff>0;
+    mTotal+=done;if(done>0)mActive++;
+    const lvl=isFut?0:done===0?0:done<=1?1:done<=2?2:done<=3?3:4;
+    const el=document.createElement('div');el.className='hmap-cell'+(isFut?' future':'');
+    el.style.background=colors[lvl];el.title=isFut?'まだこれから':`${d2}日: ${done}こかんりょう`;
+    if(!isFut)el.onclick=(()=>{const x=diff;return()=>{off=x;switchTab('plan');planView='day';document.querySelectorAll('#sec-plan .vt').forEach((b,i)=>b.classList.toggle('on',i===0));refreshNav()}})(diff);
+    g.appendChild(el);
+  }
+  const prevBase=new Date(base.getFullYear(),base.getMonth()-1,1);
+  const prevDim=new Date(base.getFullYear(),base.getMonth(),0).getDate();
+  let prevT=0;
+  for(let d2=1;d2<=prevDim;d2++)prevT+=(db[dKey(new Date(prevBase.getFullYear(),prevBase.getMonth(),d2))]||[]).filter(t=>t.status==='done').length;
+  const mDiff=mTotal-prevT;
+  const sc=document.createElement('div');sc.className='card';sc.style.padding='13px';
+  sc.innerHTML=`<div class="stitle">📊 この月のまとめ</div><div class="stat-row"><div class="stat-box"><div class="stat-val">${mTotal}</div><div class="stat-lbl">かんりょう合計</div></div><div class="stat-box"><div class="stat-val">${mActive}</div><div class="stat-lbl">活動した日</div></div><div class="stat-box"><div class="stat-val" style="color:${mDiff>=0?'var(--g)':'var(--r)'}">${mDiff>=0?'+':''}${mDiff}</div><div class="stat-lbl">先月比</div></div></div>`;
+  container.appendChild(sc);
+}
+function calcStreak(){let s=0,m=0,d=new Date(TODAY);for(let i=0;i<60;i++){const done=(db[dKey(d)]||[]).filter(t=>t.status==='done').length;if(done>0){s++;m=Math.max(m,s)}else s=0;d.setDate(d.getDate()-1)}return m}
+
+// TIMELINE
+function hiddenSlots(){
+  const tm={};ct().forEach(t=>{for(let s=t.start;s<t.start+t.dur;s++)tm[s]=t});
+  const h=new Set();
+  if(fMode==='all')return h;
+  if(fMode==='head'){let f=66;for(let s=0;s<66;s++)if(tm[s]){f=s;break}for(let s=0;s<f;s++)h.add(s);return h}
+  if(fMode==='gaps'){for(let s=0;s<66;s++)if(!tm[s])h.add(s);return h}
+  return h;
+}
+function renderTL(el,tasks){
+  el.innerHTML='';
+  const tm={};tasks.forEach(t=>{for(let s=t.start;s<t.start+t.dur;s++)tm[s]=t});
+  const hide=hiddenSlots();
+  let s=0;
+  while(s<66){
+    if(hide.has(s)&&!tm[s]){
+      let gs=s;while(s<66&&hide.has(s)&&!tm[s])s++;
+      const gap=document.createElement('div');gap.className='tgap';
+      gap.innerHTML=`<div class="tgl"></div><div class="tglb">▸ ${s2t(gs)}〜${s2t(s)}（${(s-gs)*15}分 空き）</div><div class="tgl"></div>`;
+      gap.onclick=()=>{fMode='all';document.querySelectorAll('.fbtn').forEach((b,i)=>b.classList.toggle('on',i===0));renderTL(el,ct())};
+      el.appendChild(gap);continue;
+    }
+    const task=tm[s];
+    if(task&&task.start===s){
+      const row=document.createElement('div');row.className='trow';
+      const td=document.createElement('div');td.className='ttime';td.textContent=s2t(s);
+      row.appendChild(td);
+      const col=document.createElement('div');col.className='tcol';
+      const h=task.dur*30-4;const cat=getCat(task.cat);const isDone=task.status==='done';
+      const blk=document.createElement('div');blk.className='tblk';
+      blk.style.cssText=`background:${isDone?cat.color+'bb':cat.color};height:${h}px;top:2px;opacity:${isDone?.88:1}`;
+      blk.innerHTML=`<div class="tbt">${isDone?'✓ ':cat.icon+' '}${task.name}</div>${task.dur>=2?`<div class="tbs">${dL(task.dur)} · ${task.diff==='challenge'?'😅':task.diff==='normal'?'😐':'😊'}</div>`:''}`;
+      if(!isPast())blk.onclick=()=>openEdit(task.id);
+      col.appendChild(blk);col.style.minHeight=(h+4)+'px';
+      row.appendChild(col);el.appendChild(row);s+=task.dur;
+    } else {
+      const row=document.createElement('div');row.className='trow';
+      const td=document.createElement('div');td.className='ttime';if(s%4===0)td.textContent=s2t(s);
+      row.appendChild(td);
+      const col=document.createElement('div');col.className='tcol';
+      if(!task&&!isPast()){col.classList.add('clickable');col.onclick=(()=>{const sl=s;return()=>openAddAt(sl)})(s)}
+      row.appendChild(col);el.appendChild(row);s++;
+    }
+  }
+  const last=document.createElement('div');last.className='trow';
+  const ltd=document.createElement('div');ltd.className='ttime';ltd.textContent='22:30';
+  const lc=document.createElement('div');lc.className='tcol';lc.style.borderLeft='2px solid var(--bd)';
+  last.appendChild(ltd);last.appendChild(lc);el.appendChild(last);
+}
+
+// ACHIEVEMENT
+function renderAch(){
+  document.getElementById('achDone').textContent=st.done;
+  document.getElementById('achPts').textContent=st.points;
+  document.getElementById('achChal').textContent=st.chal;
+  document.getElementById('achFoc').textContent=st.focus;
+  document.getElementById('badgeGrid').innerHTML=BDEFS.map(b=>{const e=b.cond(st);return`<div class="bg2 ${e?'earn':''}"><div class="bgi">${b.icon}</div><div class="bgn">${b.name}</div><div class="bgreq">${e?'ゲット！':b.req}</div></div>`}).join('');
+  const idx=STAGES.findIndex((s,i)=>st.done>=s.min&&(i===STAGES.length-1||st.done<STAGES[i+1].min));
+  const sr=document.getElementById('stageRow');sr.innerHTML='';
+  STAGES.forEach((s,i)=>{
+    if(i>0){const a=document.createElement('div');a.className='starr';a.textContent='▶';sr.appendChild(a)}
+    const el=document.createElement('div');el.className='stg'+(i<idx?' done':i===idx?' cur':'');
+    el.innerHTML=`<div class="ste" style="font-size:${14+i*3}px">${s.e}</div><div class="stl">${s.l}</div><div class="str">${i===0?'0〜':s.min+'〜'}</div>`;
+    sr.appendChild(el);
+  });
+  const next=STAGES[idx+1];
+  if(next){const sz=next.min-STAGES[idx].min;const pr=st.done-STAGES[idx].min;document.getElementById('prFill').style.width=Math.min(100,Math.round(pr/sz*100))+'%';document.getElementById('prLeft').textContent=`次まで あと${next.min-st.done}こ！`;document.getElementById('prRight').textContent=`${pr}/${sz}こ`}
+  else{document.getElementById('prFill').style.width='100%';document.getElementById('prLeft').textContent='🎉 最高ステージ到達！';document.getElementById('prRight').textContent=''}
+}
+function renderPtLog(){
+  const total=ptLog.reduce((a,b)=>a+b.pts,0);
+  document.getElementById('ptTotal').textContent=total;
+  const el=document.getElementById('ptLog');
+  el.innerHTML=ptLog.length?ptLog.map(r=>`<div class="prow"><div class="pri">${r.icon}</div><div class="prinfo"><div class="prtit">${r.title}</div><div class="prsub">${r.sub} · ${r.time}</div></div><div class="prbdg" style="background:${r.color}">+${r.pts} pt</div></div>`).join(''):'<div style="text-align:center;padding:22px;color:var(--sb);font-size:13px">まだポイントはないよ<br>タスクをかんりょうしよう！</div>';
+}
+function renderGuide(){
+  document.getElementById('badgeGuide').innerHTML=BDEFS.map(b=>{const e=b.cond(st);return`<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:11px;background:${e?'var(--yl)':'var(--bg)'};border:1.5px solid ${e?'#fcd34d':'var(--bd)'}"><div style="font-size:22px;width:32px;text-align:center">${b.icon}</div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--dk)">${b.name}</div><div style="font-size:11px;color:var(--sb);margin-top:1px">${b.req}</div></div><div style="font-size:12px;font-weight:700;color:${e?'var(--y)':'var(--sb)'}">${e?'ゲット！':'未取得'}</div></div>`}).join('');
+}
+
+// TAB
+function switchTab(tab){
+  const tabs=['plan','rec','ach','pts','guide'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('on',tabs[i]===tab));
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.getElementById('sec-'+tab).classList.add('on');
+  closeM('taskModal');closeM('timerModal');
+  if(tab==='rec')renderRecContent();
+  if(tab==='ach')renderAch();
+  if(tab==='pts')renderPtLog();
+  if(tab==='guide')renderGuide();
+  document.querySelector('.scroll-area').scrollTo(0,0);
+}
+
+// MODALS
+function mkBanner(icon,t,sub,pts,bg,bc,tc,sc){
+  const b=document.createElement('div');b.className='banner';b.style.cssText=`background:${bg};border:1.5px solid ${bc}`;
+  b.innerHTML=`<div style="font-size:22px">${icon}</div><div style="flex:1"><div style="font-size:12px;font-weight:700;color:${tc}">${t}</div><div style="font-size:11px;color:${sc};margin-top:1px">${sub}</div></div><div style="font-size:12px;font-weight:700;background:var(--pl);color:var(--p);border-radius:9px;padding:3px 9px">${pts}</div>`;
+  return b;
+}
+function copyDay(){db[dk(off)]=JSON.parse(JSON.stringify(db[dk(0)]||[])).map(t=>({...t,id:nid++,status:'planned'}));refreshNav();showCeleb('📋','コピーしたよ！','今日のじかんわりをコピーしました！')}
+function buildDurGrid(){
+  const mk=d=>{const b=document.createElement('button');b.className='durb'+(d.s===sDur?' sel':'');b.textContent=d.l;b.dataset.s=d.s;b.style.cssText='-webkit-appearance:none';b.onclick=()=>{sDur=d.s;document.querySelectorAll('.durb').forEach(x=>x.classList.toggle('sel',+x.dataset.s===d.s))};return b};
+  const gs=document.getElementById('durShort');gs.innerHTML='';DS.forEach(d=>gs.appendChild(mk(d)));
+  const gl=document.getElementById('durLong');gl.innerHTML='';DL.forEach(d=>gl.appendChild(mk(d)));
+}
+function buildCatGrid(){document.getElementById('catG').innerHTML=CATS.map(c=>`<div class="cb${c.id===selCat?' sel':''}" data-id="${c.id}" style="background:${c.color}22;color:${c.color};border-color:${c.color}44;cursor:pointer" onclick="selCat2(this,'${c.id}')">${c.icon}<br>${c.label}</div>`).join('')}
+function buildStartSel(){
+  const s=document.getElementById('tStart');s.innerHTML='';
+  for(let i=0;i<=66;i++){const o=document.createElement('option');o.value=i;o.textContent=s2t(i);s.appendChild(o)}
+}
+function selCat2(el,id){selCat=id;document.querySelectorAll('.cb').forEach(b=>b.classList.toggle('sel',b.dataset.id===id))}
+function selDiff2(el){sDiff=el.dataset.d;document.querySelectorAll('.db').forEach(b=>b.classList.toggle('sel',b===el))}
+function openAdd(){editId=null;selCat='hw';sDiff='normal';sDur=2;buildCatGrid();buildStartSel();buildDurGrid();document.getElementById('tName').value='';document.getElementById('mTitle').textContent='タスクを追加';document.getElementById('btnDel').style.display='none';document.getElementById('timerBtn').style.display='none';document.querySelectorAll('.db').forEach(b=>b.classList.toggle('sel',b.dataset.d==='normal'));showM('taskModal')}
+function openAddAt(slot){openAdd();document.getElementById('tStart').value=slot}
+function openEdit(id){const t=ct().find(x=>x.id===id);if(!t)return;editId=id;selCat=t.cat;sDiff=t.diff;sDur=t.dur;buildCatGrid();buildStartSel();buildDurGrid();document.getElementById('tName').value=t.name;document.getElementById('tStart').value=t.start;document.getElementById('mTitle').textContent='タスクを編集';document.getElementById('btnDel').style.display='';document.getElementById('timerBtn').style.display='';document.querySelectorAll('.db').forEach(b=>b.classList.toggle('sel',b.dataset.d===t.diff));showM('taskModal')}
+function saveTask(){
+  const name=document.getElementById('tName').value.trim();if(!name)return;
+  const start=+document.getElementById('tStart').value;const tasks=ct();
+  if(editId){const i=tasks.findIndex(t=>t.id===editId);if(i>=0)tasks[i]={...tasks[i],name,cat:selCat,start,dur:sDur,diff:sDiff}}
+  else{tasks.push({id:nid++,name,cat:selCat,start,dur:sDur,diff:sDiff,status:'planned'});if(off>0){st.points+=2;ptLog.push({icon:'📅',title:`「${name}」を${off===1?'明日':'将来'}に追加`,sub:'じぜんけいかく',pts:2,color:'#6C63FF',time:new Date().toTimeString().slice(0,5)});updPts()}}
+  closeM('taskModal');refreshNav();
+}
+function delTask(){if(!editId)return;const tasks=ct();const i=tasks.findIndex(t=>t.id===editId);if(i>=0)tasks.splice(i,1);closeM('taskModal');refreshNav()}
+function completeTask(id){
+  const t=ct().find(x=>x.id===id);if(!t||t.status==='done')return;
+  t.status='done';const c=CELEB[t.diff]||CELEB.normal;
+  st.done++;st.points+=c.p;if(t.diff==='challenge')st.chal++;
+  ptLog.push({icon:'✅',title:`「${t.name}」をかんりょう`,sub:t.diff==='challenge'?'チャレンジタスク':t.diff==='normal'?'ふつうタスク':'かんたんタスク',pts:c.p,color:getCat(t.cat).color,time:new Date().toTimeString().slice(0,5)});
+  updPts();refreshNav();showCeleb(c.e,c.t,`「${t.name}」\n${c.m}`);
+}
+function updPts(){document.getElementById('hdrPts').textContent='⭐ '+st.points+' pt'}
+function openTimerFromModal(){if(editId){closeM('taskModal');openTimer(editId)}}
+function openTimer(id){ttid=id;const t=ct().find(x=>x.id===id);tsec=tmode==='up'?0:(t?t.dur*15*60:900);document.getElementById('tTask').textContent=t?t.name:'';updTimer();showM('timerModal')}
+function setTMode(m,el){tmode=m;document.querySelectorAll('.tmb').forEach(b=>b.classList.toggle('on',b===el));if(!trun){const t=ct().find(x=>x.id===ttid);tsec=m==='up'?0:(t?t.dur*15*60:900);updTimer()}}
+function toggleTimer(){
+  if(trun){clearInterval(tivl);trun=false;document.getElementById('tStartBtn').textContent='▶ スタート';if(tmode==='up'&&Math.round(tsec/60)>st.focus)st.focus=Math.round(tsec/60)}
+  else{trun=true;document.getElementById('tStartBtn').textContent='⏸ 一時停止';tivl=setInterval(()=>{if(tmode==='up')tsec++;else{tsec--;if(tsec<=0){clearInterval(tivl);trun=false;document.getElementById('tStartBtn').textContent='▶ スタート';completeFromTimer();return}}updTimer()},1000)}
+}
+function stopTimer(){clearInterval(tivl);trun=false;tsec=0;updTimer()}
+function updTimer(){const m=Math.floor(Math.abs(tsec)/60),s=Math.abs(tsec)%60;document.getElementById('tNum').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`}
+function completeFromTimer(){stopTimer();closeM('timerModal');if(ttid)completeTask(ttid)}
+function showCeleb(e,t,txt){
+  document.getElementById('cEmi').textContent=e;
+  document.getElementById('cTit').textContent=t;
+  document.getElementById('cTxt').textContent=txt||'';
+  document.getElementById('celebWrap').classList.add('on');
+  document.querySelector('.scroll-area').scrollTo({top:0,behavior:'smooth'});
+}
+function closeCeleb(){document.getElementById('celebWrap').classList.remove('on')}
+function showM(id){
+  closeM('taskModal');closeM('timerModal');
+  document.getElementById(id).classList.add('on');
+  document.querySelector('.scroll-area').scrollTo({top:0,behavior:'smooth'});
+}
+function closeM(id){document.getElementById(id).classList.remove('on')}
+
+document.addEventListener('dblclick',e=>{
+  if(off!==0)return;
+  const b=e.target.closest('.tblk');if(!b)return;
+  const task=ct().find(t=>b.textContent.includes(t.name)&&t.status!=='done');
+  if(task)completeTask(task.id);
+});
+
+refreshNav();
+</script>
+</body>
+</html>
