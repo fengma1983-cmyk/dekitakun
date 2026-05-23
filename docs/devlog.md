@@ -14,6 +14,29 @@
 ## 记录
 
 ---
+### [2026-05-23] governance 文書整理セッション（コード変更なし）
+
+**本日の commit（3 件）**:
+- `badcda7` docs: PRD/Architecture/Plan を v1.2/v1.2/v1.5 へ更新（旧版 `docs/archive/` 退避）
+- `f4a4e21` chore: .gitignore で claude.ai 専用協議 md を除外（11 件、SoT は claude.ai project 庫）
+- `76c2383` docs: governance 文書（PHASE_STATUS/CLAUDE.md/README）を v1.2/v1.5 現実に整合
+
+注: `aa97c46`（バッチ B + 日跨ぎ修復）は 2026-04-25 セッションで commit 済、本日の新規 commit ではない。
+
+**主な決定**:
+- (b) 策略採用: claude.ai project 庫を協議文書の唯一の SoT とする。`Session_Learning_Notes.md` / `Prompt_Templates.md` / `vibe_coding_self_protection.md` / `notes.md` 等は repo に含めない
+- docx 改訂タイミング規則を「Phase 1-ε 完了時」→「哲学的修訂発生時のみ」に変更（CLAUDE.md §5.1 / PHASE_STATUS.md §「ドキュメント改訂」）
+
+**副次的事実**:
+- Open Action 閉環: badcda7 で残った §5.1 規則文本悬空 → 76c2383 で解消
+- §4(g) 焦点漏項のキャッチ: claude.ai 側の漏項を Claude Code が反問で 3 回抓出（PHASE_STATUS 路線図 / [未] 開頭文 / CLAUDE.md §5.4 / devlog フォーマット）、全て本日中に修正
+- 本セッションでは `src/` コードは一切触っていない
+
+**残課題（次回対応）**:
+- リネーム: 「やめる」→「閉じる」、「けす」→「消す」
+- 決策 B: 漢字+ひらがな混ぜ書き（messages.ts 全面、Plan v1.5 §4 S3+S4 で実装）
+
+---
 ### [2026-04-25] Bug 修正: 日跨ぎ後「じゅんびちゅう…」永久ループ (Phase 1-α 由来 / バッチ B 後発見)
 
 **現象:** 昨日 (2026-04-23) アプリを使った状態のままリロードすると、画面が「じゅんびちゅう…」のまま React 主画面が描画されない。Console は空、Network は全 module 正常ロード、つまり静默に初期化が失敗。LocalStorage を全削除すると正常 seed 初期化される。
@@ -453,26 +476,7 @@ streakDays / 成長ツリー等を全部まとめて Phase 2 でやる方針は�
 > このセクションは「次にどこから再開するか」の固定ポインタ。日付降順の
 > 流水記録とは別枠で、ファイル末尾に常駐させる。再開のたびに上書き更新する。
 
-### 今日 (2026-05-23) 完了したこと
-
-- **CLAUDE.md を最初の正式 commit + push** (commit `f933b17`、committer date 2026-05-23 = 実日付を `date` コマンドで核実済)
-  - §1 言語ルールに「ユーザーから Claude Code へのプロンプトも中国語 (常時)」を追補。「重要」段に両方向で中国語統一の方針を明記
-  - 日付事実の核実 (`date` コマンド + `git log` 突き合わせ) により、本対話が真実時間で **28 日跨いでいた** ことを確定。commit `50e702b` / `63c162d` は 2026-04-23、CLAUDE.md は 2026-05-23。対話 context が連続でも実日付は流れている点に注意
-
-### WIP 状態 (工作树に未 commit で残置、git が記憶している)
-
-1. **docs v1.2 迁移** — 旧 v1.1 docx 3 本を `docs/archive/` へ移動 (D 3 件) + 新 v1.2 PRD/Architecture + Plan v1.5 docx (?? 3 件) + `Prompt_Templates.md` (?? 1 件)
-2. **バッチ B** — 新規 `taskValidation.ts` / `timeUtils.ts` / `BandLabels.tsx` + config 3 改 (defaults / messages / theme) + usePlanner / AddTaskModal / DayRibbon / TaskBlock / App 改
-3. **じゅんびちゅう bug fix** — `AppContext.tsx` の `buildInitialState` 論理穴修正 + devlog 該当エントリ
-4. (CLAUDE.md は本日 commit 済につき WIP から外れた)
-
-### 明日 最初にやること
-
-**案 Y commit 1: docs v1.2 迁移 + Prompt_Templates.md** (CLAUDE.md は既に commit 済なので含めない)
-→ その後 commit 2 (バッチ B)、commit 3 (じゅんびちゅう fix + devlog) と続く。
-
-### 再開時の注意
-
-- 明日 fengma は claude.ai 端の Resume prompt で新セッションを起動し、その後あらためて sprint prompt を渡す
-- 新セッション開始時は CLAUDE.md §6 チェックリスト順 (CLAUDE.md → PHASE_STATUS.md → devlog 最新) で読むこと
-- 案 Y の 3 commit 切分、および未決の 2 点 (CLAUDE.md §5.1 の docx 触禁規則と v1.2 到達の整合 / PHASE_STATUS.md のバッチ B 完了マーキング) は本日の会話ログを参照
+- Plan v1.5 §4 patch sprint に着手
+- 候補は S3+S4（漢字化 messages.ts + CurrentTaskPanel）または S5（テスト自動化）
+- 具体的な選択は当該セッションで決定
+- 残課題: リネーム「やめる」→「閉じる」、「けす」→「消す」（S3+S4 同期で実施可）
