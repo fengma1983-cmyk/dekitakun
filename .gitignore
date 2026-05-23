@@ -34,3 +34,28 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# === 2026-05-23 追加: 協議 md（claude.ai project 庫を唯一の SoT とする） ===
+# 详见 notes.md 洞察 2 + 5/23 决策
+# 根直下
+/Claude_AI_Session_Protocol.md
+/Claude_Code_Session_History_Guide_CN.md
+/Prompt_Templates.md
+/Session_Learning_Notes.md
+/B_FakeDay_Script_CN.md
+/bootstrap_prompt.md
+/closing_prompt.md
+/resume_prompt.md
+/notes.md
+/practical_handbook.md
+/vibe_coding_self_protection.md
+# docs/ 下
+/docs/Claude_AI_Session_Protocol.md
+/docs/Prompt_Templates.md
+/docs/Session_Learning_Notes.md
+/docs/B_FakeDay_Script_CN.md
+/docs/bootstrap_prompt.md
+/docs/closing_prompt.md
+/docs/resume_prompt.md
+/docs/notes.md
+/docs/vibe_coding_self_protection.md
