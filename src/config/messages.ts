@@ -31,6 +31,8 @@
 // =====================================================================
 
 import type { Task, DifficultyLevel } from "../store/types";
+import type { ConflictInfo } from "../utils/taskValidation";
+import { formatSlotRange } from "../utils/timeUtils";
 
 // =====================================================================
 // DIFFICULTY_EMOJI — 難易度を表す絵文字
@@ -311,4 +313,41 @@ export const TOMORROW_SEED_MESSAGES = {
 export function getSeedPlaceholder(): string {
   const pool = TOMORROW_SEED_MESSAGES.placeholders;
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// =====================================================================
+// 8. CONFLICT_MESSAGES — 時刻重複時の警告 (バッチ B)
+// =====================================================================
+// なぜ警告チップを赤系ではなく warn 系 (#F59E0B) にするか:
+//   v1.1 のカラー哲学では赤を「警告」「責める」のシグナルとして使わない。
+//   amber 系で「気づいてもらう」温度を保ちつつ、責めない色にする
+//   (theme.ts WARN 定義参照)。
+//
+// なぜ命令形 / 疑問形ではなく断定形 (「いいかも」) を採用するか:
+//   警告チップは "情報の提示" であって "応答を求める" ものではない。
+//   疑問形 (「してみる？」) は答えを返す期待を生むので場の機能に合わない。
+//   「いいかも」は同行者の柔らかい提案で、選択権を本人に残す
+//   (「同行者として声をかける」勧誘形 / "〜しよう" 系)。
+//
+// なぜ通常 / ロック済みで文言を分けるか:
+//   ロック済みタスク (例: 学校) は子どもが動かせない。「ある」とだけ
+//   伝えても解決の道筋が見えないので、「ほかの時間が いいかも」と
+//   別時刻への誘導を含める。通常タスクは本人の判断で動かせるので、
+//   事実だけ提示し選択は本人に委ねる。
+// =====================================================================
+
+export const CONFLICT_MESSAGES = {
+  // 通常 (動かせる) タスクとの重複
+  withTask: (info: ConflictInfo) =>
+    `${formatSlotRange(info.startSlot, info.durationSlots)} は『${info.title}』があるよ`,
+
+  // ロック済みタスクとの重複
+  withLocked: (info: ConflictInfo) =>
+    `${formatSlotRange(info.startSlot, info.durationSlots)} は『${info.title}』だよ。ほかの時間が いいかも`,
+} as const;
+
+export function getConflictMessage(info: ConflictInfo): string {
+  return info.isLocked
+    ? CONFLICT_MESSAGES.withLocked(info)
+    : CONFLICT_MESSAGES.withTask(info);
 }

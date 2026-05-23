@@ -45,6 +45,7 @@ import type {
 } from "./types";
 import {
   buildSeedDayPlan,
+  createEmptyDayPlan,
   isSeeded,
   loadAchievement,
   loadCategories,
@@ -143,10 +144,32 @@ function buildInitialState(): AppState {
   const today = todayIso();
   let dayPlan = loadDayPlan(today);
 
-  if (!isSeeded() && !dayPlan) {
-    dayPlan = buildSeedDayPlan(today);
+  // 「今日の plan が無い」と「過去に一度でも seed したか」は別問題。
+  // 旧実装は && で繋いでいたため、日跨ぎ後 (= 今日の plan は無いが
+  // jk_seeded フラグは立っている) で seed 分岐がスキップされ、
+  // dayPlan が null のまま return されて App.tsx の loading guard
+  // (「じゅんびちゅう…」) に永久にとどまる症状が出ていた
+  // (2026-04-25 に発見、CLAUDE.md §4 経緯参照)。両者を独立に判定する。
+  if (!dayPlan) {
+    if (!isSeeded()) {
+      // 初回起動: 12 タスクの「1 日の模範」を投入する。これは
+      // 「これはあなたの 1 日を表すアプリだよ」を視覚で伝えるための
+      // 初回限定の教示装置であり、毎日のテンプレートではない (PRD 1.2)。
+      dayPlan = buildSeedDayPlan(today);
+      markSeeded();
+    } else {
+      // 日跨ぎ後の最初の起動: 子どもが自分でその日を組み立てる
+      // 空白で始める (案 1 採用 / 2026-04-25)。
+      // なぜ前日の carry や seed 再投入をしないか:
+      //   - PRD 1.2 「子どもが自分の計画を自由に作れるツール」と整合
+      //   - 前日 carry は「待続の山」の視覚を生み、v1.0 で否定した
+      //     体験に逆戻りする
+      //   - 日跨ぎの心理的接続は「あしたの種まき」(PRD 5.4) が別系統
+      //     として担う設計
+      // 前日の plan は jk_dayplan_{昨日} に残っているのでデータ消失ではない。
+      dayPlan = createEmptyDayPlan(today);
+    }
     saveDayPlan(today, dayPlan);
-    markSeeded();
   }
 
   return {

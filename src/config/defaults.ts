@@ -102,18 +102,36 @@ export const MAX_CUSTOM_SUBJECTS     = 10;
 export interface DayBand {
   id: "morning" | "school" | "after" | "night";
   label: string;
+  // バッチ B 追加: 帯ラベル外出し時に表示する絵文字。
+  // 狭い帯 (BAND_NARROW_SLOT_THRESHOLD 未満) ではテキストの代わりに
+  // この絵文字のみ表示し、テキストは aria-label に保持する。
+  icon: string;
   startSlot: number;
   endSlot: number;
   color: string;
-  dark?: boolean;   // true なら帯の中のテキストは白
+  dark?: boolean;   // true なら帯の中のテキストは白 (帯背景に対する読みやすさ用)
 }
 
 export const DAY_BANDS: readonly DayBand[] = [
-  { id: "morning", label: "あさ",     startSlot: 0,  endSlot: 8,  color: "#FEF3C7" },                 // 06:00–08:00
-  { id: "school",  label: "がっこう", startSlot: 8,  endSlot: 34, color: "#E0F2FE" },                 // 08:00–14:30
-  { id: "after",   label: "ほうかご", startSlot: 34, endSlot: 52, color: "#EDE9FF" },                 // 14:30–19:00
-  { id: "night",   label: "よる",     startSlot: 52, endSlot: 64, color: "#312E81", dark: true },     // 19:00–22:00
+  { id: "morning", label: "あさ",     icon: "☀️", startSlot: 0,  endSlot: 8,  color: "#FEF3C7" },                 // 06:00–08:00
+  { id: "school",  label: "がっこう", icon: "🏫", startSlot: 8,  endSlot: 34, color: "#E0F2FE" },                 // 08:00–14:30
+  { id: "after",   label: "ほうかご", icon: "🌳", startSlot: 34, endSlot: 52, color: "#EDE9FF" },                 // 14:30–19:00
+  { id: "night",   label: "よる",     icon: "🌙", startSlot: 52, endSlot: 64, color: "#312E81", dark: true },     // 19:00–22:00
 ] as const;
+
+// ---------------------------------------------------------------------
+// バッチ B: BandLabels の「狭い帯」判定の閾値
+// ---------------------------------------------------------------------
+// なぜ slot 数で決めるか:
+//   ribbon の幅は viewport に依存 (1024〜1366) して揺れるが、slot 数 =
+//   帯の時間幅は固定。ビルド時に narrow 判定が確定するので予測可能。
+// なぜ 16 か:
+//   16 slot = 4 時間。これ以下だと iPad Pro 11" 横向き 1194px の場合
+//   149〜224px の帯になり、絵文字とテキストを併記すると詰まる。
+//   現状 narrow になるのは あさ(8 slot) / よる(12 slot)。
+//   wide で残るのは がっこう(26) / ほうかご(18)。
+// ---------------------------------------------------------------------
+export const BAND_NARROW_SLOT_THRESHOLD = 16;
 
 // =====================================================================
 // 予定時間のプリセット

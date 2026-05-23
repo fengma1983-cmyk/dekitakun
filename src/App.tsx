@@ -14,6 +14,7 @@ import { useState } from "react";
 import { AppProvider, useAppContext } from "./store/AppContext";
 import { usePlanner } from "./hooks/usePlanner";
 import { DayRibbon } from "./components/planner/DayRibbon";
+import { BandLabels } from "./components/planner/BandLabels";
 import { AddTaskModal } from "./components/planner/AddTaskModal";
 import { CelebrationEffect } from "./components/planner/CelebrationEffect";
 import { TaskDetailPopover } from "./components/planner/TaskDetailPopover";
@@ -161,6 +162,10 @@ function AppShell() {
           onEmptyClick={openNewTaskAt}
         />
 
+        {/* バッチ B: 帯ラベル外置 (ribbon 直下)。
+            NowIndicator が ribbon 上方向に伸びるので下が視覚競合しない。 */}
+        <BandLabels />
+
         {/* 息子に「今どんな感じ？」のミニサマリー (分母なし) */}
         <TodaySummary tasks={state.dayPlan.tasks} />
       </main>
@@ -171,6 +176,7 @@ function AppShell() {
         approxStartSlot={approxStart}
         categories={state.categories}
         subjects={state.subjects}
+        existingTasks={state.dayPlan.tasks}
         onClose={closeModal}
         onSave={(input) => {
           if (editingTask) {
@@ -382,6 +388,14 @@ function nextFreeSlot(tasks: Task[]): number {
   // 置き換える。その時のテストケース:
   //   - 既存 [朝ごはん 7:00-7:30, 学校 8:00-14:30] で新タスク
   //     を追加 → 7:30-8:00 の空きが最優先で提案されるべき
+  //
+  // 既知の UX ヒッカップ (バッチ B 以降): seed が末尾 (slot 64=22:00)
+  // まで埋まっている状態で「+ ついか」すると、本関数は
+  // Math.min(63, ...) は常に slot 63 を返す。これは末尾 seed-12
+  // (21:00-22:00) の中に入るため、AddTaskModal がリアルタイム
+  // 重複検出で警告チップを即出する。「+ ついか直後の警告」は
+  // 本関数の暫定実装の副作用であって validateTaskTime のバグ
+  // ではない。Phase 1-β の空きスロット探索置換時に同時解消。
   if (tasks.length === 0) return 34;
   const sorted = [...tasks].sort((a, b) => a.startSlot - b.startSlot);
   const last = sorted[sorted.length - 1];

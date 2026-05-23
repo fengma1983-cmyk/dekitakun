@@ -14,6 +14,90 @@
 ## 记录
 
 ---
+### [2026-04-25] Bug 修正: 日跨ぎ後「じゅんびちゅう…」永久ループ (Phase 1-α 由来 / バッチ B 後発見)
+
+**現象:** 昨日 (2026-04-23) アプリを使った状態のままリロードすると、画面が「じゅんびちゅう…」のまま React 主画面が描画されない。Console は空、Network は全 module 正常ロード、つまり静默に初期化が失敗。LocalStorage を全削除すると正常 seed 初期化される。
+
+**原因:** Phase 1-α 初期実装 (commit 63c162d) からの pre-existing バグ。バッチ B との直接関係なし、ただ発見タイミングがバッチ B 後だった。
+
+`AppContext.buildInitialState()` のガード式が論理的に誤っていた:
+
+```typescript
+// 旧 (バグあり)
+if (!isSeeded() && !dayPlan) {
+  dayPlan = buildSeedDayPlan(today); ...
+}
+```
+
+`isSeeded()` (= 過去に一度でも seed したか / 永続フラグ) と `loadDayPlan(today) !== null` (= 今日の plan が既に作成済か / 毎日新たに評価) を `&&` で繋いでいた。両者は意味の異なる独立した条件だが、`&&` で合成すると:
+
+- 過去に seed 済 (= `isSeeded() === true`) で
+- 今日の plan が無い (= `loadDayPlan(today) === null`)
+
+の状態 = **日跨ぎ後の最初の起動** で、ガードが false になり seed 分岐がスキップされ、`dayPlan` が `null` のまま return された。`null` 値は throw ではなく静かに伝播し、[App.tsx:53](../src/App.tsx#L53) の `if (!state.dayPlan) return <loading...>` が永久に true を返すデッドロック。
+
+**診断手順 (全プログラム化):** [/tmp/repro_init_bug.mjs](/tmp/repro_init_bug.mjs) で localStorage を Map で再現し、buildInitialState の各行を逐行実行して `dayPlan === null` で return される経路を実証。さらに対照実験 [/tmp/repro_init_control.mjs](/tmp/repro_init_control.mjs) で「LocalStorage は同じ、今日の日付だけ動かす」実験を行い、`today === "2026-04-23"` の時のみ正常画面、それ以外 (`24/25/26`) 全部 STUCK となることを確認。決定要因が「日付」であることを確定させた。
+
+**解决方法:** `isSeeded` と `dayPlan` の判定を分離。`!dayPlan` を最外殻にして「今日の plan が無いなら必ず作る」を保証し、その中で「初回 vs 日跨ぎ後」で投入内容を分岐:
+
+```typescript
+// 新
+if (!dayPlan) {
+  if (!isSeeded()) {
+    dayPlan = buildSeedDayPlan(today);   // 初回: 12 タスクの教示装置
+    markSeeded();
+  } else {
+    dayPlan = createEmptyDayPlan(today); // 日跨ぎ後: 空白で開始 (案 1)
+  }
+  saveDayPlan(today, dayPlan);
+}
+```
+
+「日跨ぎ後は空白」を選択した理由 (3 案検討):
+
+- **案 1 (空白で開始 / 採用)**: PRD 1.2「子どもが自分の計画を自由に作れるツール」と整合。前日 plan は jk_dayplan_{昨日} に残るのでデータ消失ではない
+- 案 2 (毎朝 12 タスク再投入): 「テンプレ依存」を強化し、自律性育成と矛盾するため棄却
+- 案 3 (前日 carry テンプレ): 「待続の山」の視覚を生み、v1.0 で否定した「未完了リスト体験」に逆戻りするため棄却。日跨ぎの心理的接続は「あしたの種まき」(PRD 5.4) が別系統で担う設計
+
+**关键代码:**
+```typescript
+// src/store/AppContext.tsx
+import { createEmptyDayPlan, ... } from "../utils/storage";
+
+function buildInitialState(): AppState {
+  const today = todayIso();
+  let dayPlan = loadDayPlan(today);
+
+  if (!dayPlan) {
+    if (!isSeeded()) {
+      dayPlan = buildSeedDayPlan(today);
+      markSeeded();
+    } else {
+      dayPlan = createEmptyDayPlan(today);
+    }
+    saveDayPlan(today, dayPlan);
+  }
+  // ...
+}
+```
+
+**検証 (3 場景 全 PASS):** [/tmp/verify_fix.mjs](/tmp/verify_fix.mjs):
+1. 空 LocalStorage で起動 → 12 タスク seed + isSeeded=true ✓
+2. `jk_seeded=1` + `jk_dayplan_2026-04-23` 残存・今日=2026-04-25 で起動 → 空 dayPlan + 昨日データ保存維持 ✓
+3. Day1 で seed 後タスク追加 → Day2 へ日跨ぎ → Day2 空白で起動・Day1 のタスク 13 個全保存 ✓
+
+**実行: `grep -rniE "failed|failure|missed|incomplete|error|delayed|遅れ|遅延|必ず|しなければ|まだ.*していない|未完了|失敗" src/`**
+**結果: 0 件** (新規追加コメントで「未完了の山」と書きかけて 1 件発生したが、「待続の山」(PRD 3.3 推奨表現) に修正して 0 件確定)
+
+**実行: `npm run build`**
+**結果: ✓ built in 247ms / 174.14 kB → gzip 56.02 kB**
+
+**残課題 / 教訓:**
+- 「データ構造・初期化ロジック・新規 validation を変更するバッチ完了時、空 LocalStorage と旧バッチ相当データの両方で起動確認する」を CLAUDE.md §4 として常駐化済 (このバグは Phase 1-α 実装時にこの 2 状態テストをやっていれば即発見できた)
+- 加えて「日跨ぎ後の起動」を §4 第 3 項として追加予定
+- 前セッション (2026-04-23) で「禁止ワード grep 0 件通過」と報告したが実際 2 件残っていた問題に対し、CLAUDE.md §2「検証報告のフォーマット」(実行コマンド文字列を必ず併記) を常駐化済
+
+---
 ### [2026-04-23] セッション終了時まとめ — Phase 1-α 実装 + 実機テスト反映
 
 本日 1 日分の全変更の索引。詳細経緯は日付降順に並ぶ個別エントリを参照。各項目は変更対象ファイルへのリンク付き。
@@ -363,3 +447,32 @@ streakDays / 成長ツリー等を全部まとめて Phase 2 でやる方針は�
 前者を崩さずに後者を実現する最小限の差分（= +1 だけ）を選び、
 差分が一時的であることを文書で保証する。
 ---
+
+## 次回開始ポイント (2026-05-23 セッション終了時点)
+
+> このセクションは「次にどこから再開するか」の固定ポインタ。日付降順の
+> 流水記録とは別枠で、ファイル末尾に常駐させる。再開のたびに上書き更新する。
+
+### 今日 (2026-05-23) 完了したこと
+
+- **CLAUDE.md を最初の正式 commit + push** (commit `f933b17`、committer date 2026-05-23 = 実日付を `date` コマンドで核実済)
+  - §1 言語ルールに「ユーザーから Claude Code へのプロンプトも中国語 (常時)」を追補。「重要」段に両方向で中国語統一の方針を明記
+  - 日付事実の核実 (`date` コマンド + `git log` 突き合わせ) により、本対話が真実時間で **28 日跨いでいた** ことを確定。commit `50e702b` / `63c162d` は 2026-04-23、CLAUDE.md は 2026-05-23。対話 context が連続でも実日付は流れている点に注意
+
+### WIP 状態 (工作树に未 commit で残置、git が記憶している)
+
+1. **docs v1.2 迁移** — 旧 v1.1 docx 3 本を `docs/archive/` へ移動 (D 3 件) + 新 v1.2 PRD/Architecture + Plan v1.5 docx (?? 3 件) + `Prompt_Templates.md` (?? 1 件)
+2. **バッチ B** — 新規 `taskValidation.ts` / `timeUtils.ts` / `BandLabels.tsx` + config 3 改 (defaults / messages / theme) + usePlanner / AddTaskModal / DayRibbon / TaskBlock / App 改
+3. **じゅんびちゅう bug fix** — `AppContext.tsx` の `buildInitialState` 論理穴修正 + devlog 該当エントリ
+4. (CLAUDE.md は本日 commit 済につき WIP から外れた)
+
+### 明日 最初にやること
+
+**案 Y commit 1: docs v1.2 迁移 + Prompt_Templates.md** (CLAUDE.md は既に commit 済なので含めない)
+→ その後 commit 2 (バッチ B)、commit 3 (じゅんびちゅう fix + devlog) と続く。
+
+### 再開時の注意
+
+- 明日 fengma は claude.ai 端の Resume prompt で新セッションを起動し、その後あらためて sprint prompt を渡す
+- 新セッション開始時は CLAUDE.md §6 チェックリスト順 (CLAUDE.md → PHASE_STATUS.md → devlog 最新) で読むこと
+- 案 Y の 3 commit 切分、および未決の 2 点 (CLAUDE.md §5.1 の docx 触禁規則と v1.2 到達の整合 / PHASE_STATUS.md のバッチ B 完了マーキング) は本日の会話ログを参照

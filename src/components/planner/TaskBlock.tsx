@@ -46,7 +46,7 @@ export function TaskBlock({ task, category, onClick }: Props) {
   //   iPad Pro 11" 横向きで 1 スロット = 約 17.9px、2 スロット = 約 35.9px。
   //   中央アイコン (26px) と右上の難易度絵文字 (11px) が水平方向で
   //   オーバーラップし、窮屈な見た目になる。難易度情報は tap で開く
-  //   TaskDetailPopover で必ず見られるので、一覧性を優先して隠す。
+  //   TaskDetailPopover を開けば見られるので、一覧性を優先して隠す。
   //   ユーザー指示は `=== 2` だったが、1 スロット (15 分タスク、
   //   AddTaskModal の DURATION_PRESETS で作成可能) でも同じ問題が
   //   起きるため `<= 2` に一般化している。

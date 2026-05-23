@@ -65,7 +65,10 @@ export function DayRibbon({ tasks, categories, onTaskClick, onEmptyClick }: Prop
       }}
       onClick={handleRibbonClick}
     >
-      {/* 4 帯の背景 */}
+      {/* 4 帯の背景 (バッチ B: ラベルは BandLabels.tsx へ外出し)。
+          帯内に label を置くと 2 slot タスクのアイコンと空間が衝突する
+          症状が iPad Pro 11" 横向きで観測されたため、背景色のみ残し
+          テキストはリボン下方に独立配置する。 */}
       {DAY_BANDS.map((band) => {
         const leftPercent = (band.startSlot / totalSlots) * 100;
         const widthPercent = ((band.endSlot - band.startSlot) / totalSlots) * 100;
@@ -81,19 +84,7 @@ export function DayRibbon({ tasks, categories, onTaskClick, onEmptyClick }: Prop
               width: `${widthPercent}%`,
               background: band.color,
             }}
-          >
-            <div
-              style={{
-                padding: "6px 12px",
-                fontSize: 12,
-                fontWeight: 700,
-                color: band.dark ? "#FFFFFF" : "#4A5568",
-                letterSpacing: 1,
-              }}
-            >
-              {band.label}
-            </div>
-          </div>
+          />
         );
       })}
 

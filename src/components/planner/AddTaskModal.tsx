@@ -12,15 +12,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Category, DifficultyLevel, Subject, Task } from "../../store/types";
-import {
-  DURATION_PRESETS,
-  TIME_CONFIG,
-} from "../../config/defaults";
-import { BRAND, PURPLE, RADIUS, SPACING } from "../../config/theme";
+import { DURATION_PRESETS } from "../../config/defaults";
+import { BRAND, PURPLE, RADIUS, SPACING, WARN } from "../../config/theme";
 import {
   DIFFICULTY_EMOJI,
   DIFFICULTY_LABEL,
+  getConflictMessage,
 } from "../../config/messages";
+import { hourMinToSlot, slotToHourMin } from "../../utils/timeUtils";
+import { validateTaskTime } from "../../utils/taskValidation";
 
 interface Props {
   open: boolean;
@@ -28,6 +28,9 @@ interface Props {
   approxStartSlot?: number;
   categories: Category[];
   subjects: Subject[];
+  // バッチ B 追加: 時刻重複検出用に現タスク群を渡す。
+  // 編集モードでは自タスク (existingTask.id) を除外して判定する。
+  existingTasks: readonly Task[];
   onClose: () => void;
   onSave: (input: {
     title: string;
@@ -46,20 +49,8 @@ const DIFFS: DifficultyLevel[] = ["easy", "normal", "challenge"];
 const HOURS = Array.from({ length: 16 }, (_, i) => 6 + i);        // 06..21
 const MINS = [0, 15, 30, 45];
 
-function slotToHourMin(slot: number): { hour: number; minute: number } {
-  const totalMin = TIME_CONFIG.dayStartSlot * TIME_CONFIG.slotMinutes + slot * TIME_CONFIG.slotMinutes;
-  return { hour: Math.floor(totalMin / 60), minute: totalMin % 60 };
-}
-
-function hourMinToSlot(hour: number, minute: number): number {
-  const totalMin = hour * 60 + minute;
-  return Math.round(
-    (totalMin - TIME_CONFIG.dayStartSlot * TIME_CONFIG.slotMinutes) / TIME_CONFIG.slotMinutes,
-  );
-}
-
 export function AddTaskModal(props: Props) {
-  const { open, existingTask, approxStartSlot, categories, subjects, onClose, onSave, onComplete, onDelete } = props;
+  const { open, existingTask, approxStartSlot, categories, subjects, existingTasks, onClose, onSave, onComplete, onDelete } = props;
 
   const initialStartSlot = existingTask?.startSlot ?? approxStartSlot ?? 0;
   const initialTime = slotToHourMin(initialStartSlot);
@@ -75,7 +66,7 @@ export function AddTaskModal(props: Props) {
   //   全タスクを normal で完了させてしまう。毎回「今日のこれは
   //   むずかしい？ふつう？」を一瞬でも考える習慣を作るため、新規作成時は
   //   難易度未選択 → 「ついか」ボタンが disabled、という導線にする。
-  //   編集時は既存値 (必ず 3 値のいずれか) をそのまま表示する。
+  //   編集時は既存値 (DifficultyLevel が 3 値しか取らない型) をそのまま表示する。
   const [difficulty, setDifficulty] = useState<DifficultyLevel | null>(
     existingTask?.difficulty ?? null,
   );
@@ -98,12 +89,29 @@ export function AddTaskModal(props: Props) {
     [subjects, categoryId],
   );
 
+  // バッチ B: リアルタイム時刻重複検出。
+  // 入力中の (hour, minute, durationMinutes) が変わるたびに既存タスク群と
+  // 突き合わせる。編集モードでは自タスクを除外。
+  // useMemo で済ませる理由: O(tasks.length) のループは ~12 件規模で
+  // 計測不要なほど軽量、debounce は逆に「打鍵 → 反映」のラグを生む。
+  const candidateStartSlot = hourMinToSlot(hour, minute);
+  const candidateDurationSlots = Math.max(1, Math.round(durationMinutes / 15));
+  const conflict = useMemo(() => {
+    const result = validateTaskTime(
+      { startSlot: candidateStartSlot, durationSlots: candidateDurationSlots },
+      existingTasks,
+      existingTask?.id,
+    );
+    return result.ok ? null : result.conflict;
+  }, [candidateStartSlot, candidateDurationSlots, existingTasks, existingTask?.id]);
+
   if (!open) return null;
 
   const isEdit = !!existingTask;
   const isLocked = existingTask?.isLocked ?? false;
 
-  const canSave = title.trim().length > 0 && difficulty !== null;
+  const canSave =
+    title.trim().length > 0 && difficulty !== null && conflict === null;
 
   const handleSave = () => {
     if (!canSave || difficulty === null) return;   // difficulty === null は型狭め用
@@ -324,6 +332,31 @@ export function AddTaskModal(props: Props) {
             </div>
           )}
         </Field>
+
+        {/* バッチ B: 時刻重複の警告チップ。
+            存在する時のみレンダリング。アクションボタンの直上に置き、
+            disable された「ほぞん / ついか」との因果関係を視覚的に
+            繋げる (色は theme.WARN 系。赤系は v1.1 哲学で使わない)。
+            メッセージ本体は messages.ts の getConflictMessage に集約。 */}
+        {conflict && !isLocked && (
+          <div
+            role="status"
+            aria-live="polite"
+            style={{
+              marginTop: SPACING.md,
+              padding: `${SPACING.sm} ${SPACING.md}`,
+              background: WARN.soft,
+              borderLeft: `4px solid ${WARN.main}`,
+              borderRadius: RADIUS.md,
+              color: WARN.text,
+              fontSize: 14,
+              fontWeight: 700,
+              lineHeight: 1.5,
+            }}
+          >
+            {getConflictMessage(conflict)}
+          </div>
+        )}
 
         {/* アクションボタン */}
         <div style={{ display: "flex", gap: SPACING.sm, marginTop: SPACING.lg, flexWrap: "wrap" }}>

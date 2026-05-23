@@ -19,6 +19,10 @@ import { useCallback } from "react";
 import { useAppContext } from "../store/AppContext";
 import type { DifficultyLevel, Task } from "../store/types";
 import { raise } from "../utils/assert";
+import {
+  validateTaskTime,
+  type ConflictInfo,
+} from "../utils/taskValidation";
 
 function makeId(): string {
   // Phase 1-α は衝突確率の低い簡易 ID で十分。
@@ -35,11 +39,36 @@ export interface AddTaskInput {
   difficulty: DifficultyLevel;
 }
 
+// バッチ B で導入: 時刻重複時は dispatch せず { ok: false, conflict } を返す。
+// なぜ throw でなく結果型にするか:
+//   重複は「正常な業務状態」(子どもが入力中の途中) で発生しうる。
+//   throw は予期しない不変条件違反のために予約する (assert.ts の方針)。
+// なぜ呼び出し側 (App.tsx) が無視しても安全か:
+//   AddTaskModal が pre-save 段階で validateTaskTime を直接呼び、
+//   重複があれば「ほぞん / ついか」ボタンを disable にしている。
+//   この hook 側はクロスタブ等のレース時に最後の砦として機能する。
+export type AddTaskResult =
+  | { ok: true; task: Task }
+  | { ok: false; conflict: ConflictInfo };
+
+export type UpdateTaskResult =
+  | { ok: true }
+  | { ok: false; conflict: ConflictInfo };
+
 export function usePlanner() {
   const { state, dispatch } = useAppContext();
 
   const addTask = useCallback(
-    (input: AddTaskInput): Task => {
+    (input: AddTaskInput): AddTaskResult => {
+      const tasks = state.dayPlan?.tasks ?? [];
+      const validation = validateTaskTime(
+        { startSlot: input.startSlot, durationSlots: input.durationSlots },
+        tasks,
+      );
+      if (!validation.ok) {
+        return { ok: false, conflict: validation.conflict };
+      }
+
       const task: Task = {
         id: makeId(),
         title: input.title,
@@ -55,16 +84,35 @@ export function usePlanner() {
         createdAt: new Date().toISOString(),
       };
       dispatch({ type: "ADD_TASK", payload: task });
-      return task;
+      return { ok: true, task };
     },
-    [dispatch],
+    [dispatch, state.dayPlan],
   );
 
   const updateTask = useCallback(
-    (id: string, changes: Partial<Task>) => {
+    (id: string, changes: Partial<Task>): UpdateTaskResult => {
+      const tasks = state.dayPlan?.tasks ?? [];
+      const target = tasks.find((t) => t.id === id);
+
+      // 時刻 / 長さ系の変更が含まれる時だけ重複チェックを行う。
+      // タイトル / カテゴリだけの編集で誤検知させない。
+      const startSlot = changes.startSlot ?? target?.startSlot;
+      const durationSlots = changes.durationSlots ?? target?.durationSlots;
+      if (startSlot !== undefined && durationSlots !== undefined) {
+        const validation = validateTaskTime(
+          { startSlot, durationSlots },
+          tasks,
+          id, // 編集モード: 自タスクは衝突相手から除外
+        );
+        if (!validation.ok) {
+          return { ok: false, conflict: validation.conflict };
+        }
+      }
+
       dispatch({ type: "UPDATE_TASK", payload: { id, changes } });
+      return { ok: true };
     },
-    [dispatch],
+    [dispatch, state.dayPlan],
   );
 
   const deleteTask = useCallback(
