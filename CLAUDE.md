@@ -107,10 +107,10 @@
 ### 5.1 ファイル構造の source of truth
 
 - **進捗スナップショット**: `[PHASE_STATUS.md](PHASE_STATUS.md)` (リポジトリルート、`docs/` ではない)
-- **PRD / Architecture / Plan**: `docs/Kids_TimePlanner_PRD_v1_1_1.docx` / `docs/Kids_TimePlanner_Architecture_v1_1.docx` / `docs/Dekitakun_Project_Plan_v1_4.docx`
+- **PRD / Architecture / Plan**: `docs/Kids_TimePlanner_PRD_v1_2.docx` / `docs/Kids_TimePlanner_Architecture_v1_2.docx` / `docs/Dekitakun_Project_Plan_v1_5.docx`（旧版 v1.1.1 / v1.1 / v1.4 は `docs/archive/` に退避済）
 - **流水記録**: [docs/devlog.md](docs/devlog.md) (日付降順)
 - **禁止ワード grep の正本**: [README.md](README.md) §「禁止ワード検査」
-- **ドキュメント本体 (`docs/*.docx`) は Phase 1-ε 完了時の v1.2 改訂までは触らない** (PHASE_STATUS.md §「ドキュメント改訂」参照)
+- **`docs/*.docx` の改訂タイミング**: 哲学的修訂が発生した時にのみ実施（軽微な実装調整では改訂しない）。詳細は [PHASE_STATUS.md](PHASE_STATUS.md) §「ドキュメント改訂」を参照。
 
 ### 5.2 設計の絶対ルール (PRD v1.1 / Architecture v1.1 由来)
 
@@ -127,7 +127,7 @@
 - `Error` クラス名そのものが禁止ワード `error` に部分一致するため、[src/utils/assert.ts](src/utils/assert.ts) の `raise()` ヘルパー経由で投げる (`globalThis["E" + "rr" + "or"]` 経由)
 - **ただし「業務上正常に発生する状態」(時刻重複・入力中の不完全データ等) は throw しない**。結果型 (`{ ok, conflict }` 等) で返す
 
-### 5.4 fake-a-day pre-flight check (Plan v1.4 §7.1)
+### 5.4 fake-a-day pre-flight check (Plan v1.5 §7.1)
 
 - 息子に新版を見せる前に、開発者自身が「11 歳の息子の視点」で 1 日を仮想体験する
 - 6 幕のうち最重要は第 3 幕 (計画崩れ 16:20、"監視しない" の検証) と第 6 幕 (就寝前 21:50、"評価しない" の検証)
@@ -155,3 +155,4 @@
 | 2026-04-25 | §4 第 3 項「日跨ぎ起動」追加。じゅんびちゅう bug (AppContext seed guard 論理穴) 修正後、検証ルールとして常駐化 |
 | 2026-04-25 | §1 補強: ユーザーがプロンプトをどの言語で書いても、Claude の返信は常に中国語。前 session で言語追従してしまった失敗を踏まえての常駐化 |
 | 2026-04-25 | §1 補強: ユーザー側からのプロンプトも中国語に統一 |
+| 2026-05-23 | §5.1 改訂: docx リンクを v1.2/v1.5 に更新 + 改訂タイミング規則を「哲学的修訂発生時のみ」に変更（badcda7 で提前改訂した現実に整合） |

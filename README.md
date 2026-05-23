@@ -9,9 +9,9 @@
 
 | 役割 | ファイル |
 |---|---|
-| 何を作るか (PRD) | [docs/Kids_TimePlanner_PRD_v1_1_1.docx](docs/Kids_TimePlanner_PRD_v1_1_1.docx) |
-| どう作るか (Architecture) | [docs/Kids_TimePlanner_Architecture_v1_1.docx](docs/Kids_TimePlanner_Architecture_v1_1.docx) |
-| 何時やるか (Plan) | [docs/Dekitakun_Project_Plan_v1_4.docx](docs/Dekitakun_Project_Plan_v1_4.docx) |
+| 何を作るか (PRD) | [docs/Kids_TimePlanner_PRD_v1_2.docx](docs/Kids_TimePlanner_PRD_v1_2.docx) |
+| どう作るか (Architecture) | [docs/Kids_TimePlanner_Architecture_v1_2.docx](docs/Kids_TimePlanner_Architecture_v1_2.docx) |
+| 何時やるか (Plan) | [docs/Dekitakun_Project_Plan_v1_5.docx](docs/Dekitakun_Project_Plan_v1_5.docx) |
 | 進捗スナップショット | [PHASE_STATUS.md](PHASE_STATUS.md) |
 
 **迷ったら PHASE_STATUS.md を先に見る。** 何が終わっていて、何が次かが 1 画面で分かる。

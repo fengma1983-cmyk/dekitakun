@@ -1,13 +1,14 @@
 # Phase Status — できた！くん (じかんわり)
 
-最終更新: 2026-04-23 (セッション終了時)
-対応 PRD / Architecture / Plan: v1.1 / v1.1 / v1.4
+最終更新: 2026-05-23 (セッション終了時)
+対応 PRD / Architecture / Plan: v1.2 / v1.2 / v1.5
 
-> **次回セッション開始時の最初の作業**: **バッチ B (時刻重複防止 + 帯ラベル外出し)** から。
-> 仕様は過去の対話ログにあるため再送不要。不明点があれば最初に確認質問する。
+> **次回セッション開始時の最初の作業**: Plan v1.5 §4 の patch sprint に着手。
+> 候補は S3+S4（漢字化 messages.ts + CurrentTaskPanel）または S5（テスト自動化）。
+> 具体的な選択は当該セッションで決定。
 
 このドキュメントは「何が終わっていて、何がまだ」を一目で把握するための
-進捗スナップショット。Phase の区切り方は Plan v1.4 Section 3.2 に従い、
+進捗スナップショット。Phase の区切り方は Plan v1.5 Section 3.2 に従い、
 Phase 1 の内部はさらに α/β/γ/δ/ε に段階化している (息子に最速で
 「動くもの」を見せるための slice 戦略)。
 
@@ -18,7 +19,7 @@ Phase 1 の内部はさらに α/β/γ/δ/ε に段階化している (息子に
 | Phase | 目標 | 状態 |
 |---|---|---|
 | **Phase 0** | card session · プロトタイプ · ドキュメント v1.1/v1.4 | ✅ 完了 |
-| **Phase 1-α** | 最小可動版: 加タスク · 完了 · 祝福 | 🟢 **今ここ (本 slice で完了)** |
+| **Phase 1-α** | 最小可動版: 加タスク · 完了 · 祝福 | 🟢 **今ここ (バッチ B 完了、残: リネーム + 漢字化)** |
 | Phase 1-β | 円グラフ (飽和グラフ) · 予実比較 | ⏳ 未着手 |
 | Phase 1-γ | タスクタイマー UI (正/倒カウント · 専注モード) | ⏳ 未着手 |
 | Phase 1-δ | 誘いカード (3択) · 最小起動 · 気分選択 (mood) | ⏳ 未着手 |
@@ -61,12 +62,13 @@ Phase 1 の内部はさらに α/β/γ/δ/ε に段階化している (息子に
 
 ### [未] 次回以降のタスク
 
-上から優先順。**バッチ B が次回セッション最優先**。
+上から優先順。**Phase 1-α 完了前にリネーム + 漢字化を片付ける**。
 
 **Phase 1-α 完了前に片付ける (バッチ B / 用語整理 / 文案方針)**
 
-- [ ] **バッチ B: 時刻重複防止** — `src/utils/taskValidation.ts` 新設 (重複検出の純粋関数) + [usePlanner.ts](src/hooks/usePlanner.ts) でバリデーション呼び出し + [AddTaskModal.tsx](src/components/planner/AddTaskModal.tsx) で UX フィードバック (「この時間は別のタスクと重なっています」等) **— 次回セッション最優先**
-- [ ] **バッチ B: 帯ラベル外出し** — `src/components/planner/BandLabels.tsx` 新設 + [DayRibbon.tsx](src/components/planner/DayRibbon.tsx) から帯内ラベル (「あさ / がっこう / ほうかご / よる」) を削除し、ribbon の上か下に独立配置 **— 次回セッション最優先**
+- [x] **バッチ B: 時刻重複防止** — `src/utils/taskValidation.ts` 新設 + バリデーション組み込み（aa97c46 で完了）
+- [x] **バッチ B: 帯ラベル外出し** — `src/components/planner/BandLabels.tsx` 新設、DayRibbon から外出し（aa97c46 で完了）
+- [x] **日跨ぎ「じゅんびちゅう」永久ループ修復** — `AppContext.tsx` の seed guard 論理穴を修正（aa97c46 で完了、devlog 2026-04-25 参照）
 - [ ] **リネーム: 「やめる」→「閉じる」、「けす」→「消す」** — AddTaskModal と TaskDetailPopover 内。11 歳にとって「やめる」が「タスクやめる / ダイアログやめる」どちらか曖昧。Phase 1-δ の paused「一旦とめる」との混同も先回り解消
 - [ ] **決策 B: 漢字+ひらがな混ぜ書き (中学 1 年生レベル、messages.ts 全面)** — [messages.ts](src/config/messages.ts) 全面改訂。UI 文言も同規範で見直し。ただし「できた！」等の感情表現はひらがな継続。禁止ワード規範 (PRD 3.3) は継続遵守
 
@@ -206,30 +208,36 @@ v1.1 で新しく追加された「同行者」哲学と禁止ワード規範を
 
 ---
 
-## ドキュメント改訂（Phase 1-ε 完了時点で v1.2 へ）
+## ドキュメント改訂
 
-Phase 1-α 〜 1-ε の間に発生した修訂を、Phase 1 全体完了時に PRD v1.2 /
-Architecture v1.2 へまとめて反映する。途中の各スライスでは
-[docs/devlog.md](docs/devlog.md) に流水記録のみ残す。
+### 現状（2026-05-23）
 
-### 反映対象（trigger 時に詳細化）
+PRD / Architecture / Plan は **v1.2 / v1.2 / v1.5** で凍結中（badcda7 で commit 済）。
+旧版 v1.1.1 / v1.1 / v1.4 は `docs/archive/` に退避。
 
-- **PRD 2.3**: TaskBlock 表示規則（3項目→2項目+Popover）
-- **PRD 7.3**: CelebrationEffect（トロフィー、Portal、時間分離）
-- **PRD 3.3**: 禁止ワード拡張、「ひらがな化は降格」の原則
-- **PRD 文案原則**: 漢字+ひらがな混ぜ書き（中 1 レベル）
-- **Architecture 2.2**: TaskBlock + Popover の data contract
-- **Architecture 新章**: 時刻重複防止 / 帯ラベル外置
-- **Architecture 3.2**: messages.ts 漢字化の実装指針
-- **Architecture 4.1**: ACHIEVEMENT 永続化
-- **Architecture 7.3**: Portal / pointerEvents / phase 状態機
-- **Plan 6.2-6.3**: Sprint story の α/β/γ/δ/ε 分割
-- **Plan 7.1**: 簡易 fake-a-day の追加
+### 改訂の経緯
 
-### 運用ルール
+当初想定:「Phase 1-ε 完了時に v1.2 へまとめて反映」（PHASE_STATUS.md 2026-04-23 時点）
 
-- 各 slice 終了時点では **本ファイル (PHASE_STATUS.md)** の [済] / [未] を更新し、
-  個別の変更経緯は **devlog.md** に日付降順で追記するに留める
-- PRD / Architecture / Plan の本体ファイル (`docs/*.docx`) には一切手を入れない
-- Phase 1-ε 完了を trigger とし、上記反映対象を実際の実装差分と
-  突き合わせて詳細化 → docx を更新 → v1.2 として凍結
+実際: Phase 1-α patch sprint 中（漢字化 + emoji-only + CurrentTaskPanel への
+哲学的修訂）で必要になり、Phase 1-ε 完了を待たず提前改訂（2026-05-23）。
+理由: 哲学的修訂を PRD/Arch/Plan に反映しないと、後続 sprint の参照が不能になるため。
+
+### 運用ルール（5/23 確定）
+
+- 各 slice 終了時の進捗更新は **本ファイル (PHASE_STATUS.md)** と
+  [docs/devlog.md](docs/devlog.md) のみ
+- `docs/*.docx`（PRD / Architecture / Plan）の改訂は、
+  **哲学的修訂が発生した時にのみ** 実施する（軽微な実装調整では改訂しない）
+- 次回 docx 改訂の想定 trigger:
+  - 哲学的修訂が発生した時
+  - Phase 1 全体完了時の総括
+
+### 過去の反映実績
+
+**v1.1.1/v1.1/v1.4 → v1.2/v1.2/v1.5（badcda7、2026-05-23）の反映項目**:
+
+- PRD 2.3 / 7.3: TaskBlock 表示規則、CelebrationEffect
+- PRD 3.3 / 文案: 禁止ワード拡張、漢字+ひらがな混ぜ書き、「ひらがな化は降格」原則
+- Architecture 2.2 / 新章 / 3.2 / 4.1 / 7.3: 占位純関数、時刻重複防止、帯ラベル外置、漢字化指針、ACHIEVEMENT 永続化、Portal/phase 状態機
+- Plan 6.2-6.3 / 7.1: Sprint story α/β/γ/δ/ε 分割、簡易 fake-a-day 追加
