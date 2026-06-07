@@ -373,7 +373,7 @@ export function AddTaskModal(props: Props) {
               minWidth: 100,
             }}
           >
-            やめる
+            閉じる
           </button>
 
           {isEdit && onDelete && !isLocked && (
@@ -389,7 +389,7 @@ export function AddTaskModal(props: Props) {
                 fontWeight: 700,
               }}
             >
-              けす
+              消す
             </button>
           )}
 
