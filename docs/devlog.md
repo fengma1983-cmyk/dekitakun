@@ -14,6 +14,31 @@
 ## 记录
 
 ---
+### [2026-06-07] S3+S4 最小启动 sprint — 「やめる/けす」改名 + git identity 設定
+
+**本日の commit**:
+- `67e09d5` feat(ui): AddTaskModal の「やめる」「けす」を「閉じる」「消す」へ改名（amend で identity 統一）
+- （PHASE_STATUS / devlog 更新の commit は本 entry 記載後）
+
+**範囲**:
+- AddTaskModal.tsx 2 行のテキスト改名のみ（最小启动路径）
+- onClick handler 名 / onDelete prop 名 / 注釈 / aria-label は維持
+- 🗑 emoji 追加（TaskDetailPopover との視覚一致化）は別 sprint 候補として残す
+
+**主な決定**:
+- (a) 最小启动路径採用: 視覚一致性は別 sprint 候補へ
+- git committer identity を auto-detect（`Geese <geese@GeesetekiMacBook-Air.local>`）から `fengma <fengma1983@gmail.com>` へ設定（local config）、67e09d5 も amend で新 identity に統一
+
+**副次的事実**:
+- PHASE_STATUS の旧描述「AddTaskModal と TaskDetailPopover 内」は誤記が判明 → 本日同時修正
+- 過去 5 commit（aa97c46 / badcda7 / f4a4e21 / 76c2383 / cbdbfa4）は旧 auto-detect identity のまま（既に push 済のため amend 不可、history rewrite を避ける）
+
+**残課題（次回対応）**:
+- 決策 B: 漢字+ひらがな混ぜ書き（messages.ts 全面、Plan v1.5 §4 S3+S4）
+- CurrentTaskPanel 新規実装（Plan v1.5 §4 S3+S4）
+- 視覚一致性微決策: AddTaskModal「消す」に 🗑 emoji を追加するか別検討
+
+---
 ### [2026-05-23] governance 文書整理セッション（コード変更なし）
 
 **本日の commit（3 件）**:
@@ -471,12 +496,11 @@ streakDays / 成長ツリー等を全部まとめて Phase 2 でやる方針は�
 差分が一時的であることを文書で保証する。
 ---
 
-## 次回開始ポイント (2026-05-23 セッション終了時点)
+## 次回開始ポイント (2026-06-07 セッション終了時点)
 
 > このセクションは「次にどこから再開するか」の固定ポインタ。日付降順の
 > 流水記録とは別枠で、ファイル末尾に常駐させる。再開のたびに上書き更新する。
 
-- Plan v1.5 §4 patch sprint に着手
-- 候補は S3+S4（漢字化 messages.ts + CurrentTaskPanel）または S5（テスト自動化）
-- 具体的な選択は当該セッションで決定
-- 残課題: リネーム「やめる」→「閉じる」、「けす」→「消す」（S3+S4 同期で実施可）
+- Plan v1.5 §4 S3+S4 残りの本体（漢字化 messages.ts + CurrentTaskPanel）または S5（テスト自動化）に着手
+- 残課題: 視覚一致性微決策（AddTaskModal「消す」に 🗑 emoji 追加するか）
+- リネーム「やめる」→「閉じる」、「けす」→「消す」は本日完了（67e09d5）
